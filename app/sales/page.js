@@ -116,7 +116,7 @@ export default function Sales() {
               <select
                 value={filters.store_id}
                 onChange={(e) => setFilters({...filters, store_id: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
               >
                 <option value="">Все магазины</option>
                 {stores.map((store) => (
@@ -133,7 +133,7 @@ export default function Sales() {
                 type="date"
                 value={filters.date_from}
                 onChange={(e) => setFilters({...filters, date_from: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
               />
             </div>
 
@@ -145,7 +145,7 @@ export default function Sales() {
                 type="date"
                 value={filters.date_to}
                 onChange={(e) => setFilters({...filters, date_to: e.target.value})}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
               />
             </div>
 
@@ -160,7 +160,7 @@ export default function Sales() {
                   value={filters.search}
                   onChange={(e) => setFilters({...filters, search: e.target.value})}
                   placeholder="Номер чека..."
-                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                 />
               </div>
             </div>
@@ -226,7 +226,7 @@ export default function Sales() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <button className="text-indigo-600 hover:text-indigo-800">
+                      <button className="text-[#475B8D] hover:text-[#475B8D]">
                         <Eye className="h-4 w-4" />
                       </button>
                     </td>

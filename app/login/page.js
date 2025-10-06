@@ -45,11 +45,11 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-white to-purple-100">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#475B8D] via-white to-purple-100">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-indigo-600 mb-2">Hisobly</h1>
+            <h1 className="text-3xl font-bold text-[#475B8D] mb-2">Hisobly</h1>
             <p className="text-gray-600">
               {isLogin ? 'Войдите в свой аккаунт' : 'Создайте новый аккаунт'}
             </p>
@@ -66,7 +66,7 @@ export default function Login() {
                     type="text"
                     value={formData.company_name}
                     onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     required
                   />
                 </div>
@@ -78,7 +78,7 @@ export default function Login() {
                     type="text"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
               </>
@@ -90,7 +90,7 @@ export default function Login() {
                 type="email"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                 required
               />
             </div>
@@ -102,7 +102,7 @@ export default function Login() {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+                  className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D] pr-10"
                   required
                 />
                 <button
@@ -118,7 +118,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-[#475B8D] text-white py-2 rounded-lg hover:bg-[#475B8D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? 'Загрузка...' : isLogin ? 'Войти' : 'Зарегистрироваться'}
             </button>
@@ -129,7 +129,7 @@ export default function Login() {
               {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}{' '}
               <button
                 onClick={() => setIsLogin(!isLogin)}
-                className="text-indigo-600 hover:text-indigo-700 font-medium"
+                className="text-[#475B8D] hover:text-[#475B8D] font-medium"
               >
                 {isLogin ? 'Зарегистрироваться' : 'Войти'}
               </button>

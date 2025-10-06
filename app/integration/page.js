@@ -16,7 +16,7 @@ export default function Integration() {
           <div className="card p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Подключение</h3>
-              <Plug className="h-5 w-5 text-indigo-600" />
+              <Plug className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Подключение к CRM, бухгалтерским системам (1C, QuickBooks).</p>
           </div>
@@ -24,7 +24,7 @@ export default function Integration() {
           <div className="card p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Интеграция</h3>
-              <Zap className="h-5 w-5 text-indigo-600" />
+              <Zap className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Интеграция с фискальными регистраторами и платежными терминалами.</p>
           </div>
@@ -42,7 +42,7 @@ export default function Integration() {
               { name: 'Uzumbank', status: 'Не подключено', icon: Zap },
               { name: 'Фискальный регистратор', status: 'Активно', icon: Plug },
             ].map((integration, index) => (
-              <div key={index} className="border rounded-lg p-4 hover:border-indigo-300 transition-colors">
+              <div key={index} className="border rounded-lg p-4 hover:border-[#475B8D] transition-colors">
                 <div className="flex items-center justify-between mb-2">
                   <integration.icon className="h-5 w-5 text-gray-400" />
                   <span className={`text-xs px-2 py-1 rounded-full ${
@@ -57,7 +57,7 @@ export default function Integration() {
                 <button className={`mt-2 text-sm ${
                   integration.status === 'Активно'
                     ? 'text-red-600 hover:text-red-700'
-                    : 'text-indigo-600 hover:text-indigo-700'
+                    : 'text-[#475B8D] hover:text-[#475B8D]'
                 }`}>
                   {integration.status === 'Активно' ? 'Отключить' : 'Подключить'}
                 </button>

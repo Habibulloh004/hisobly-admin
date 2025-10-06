@@ -77,7 +77,7 @@ export default function Warehouse() {
               <select
                 value={selectedWarehouse}
                 onChange={(e) => setSelectedWarehouse(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
               >
                 {warehouses.map((warehouse) => (
                   <option key={warehouse.id} value={warehouse.id}>
@@ -98,7 +98,7 @@ export default function Warehouse() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Название или артикул..."
-                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                 />
               </div>
             </div>
@@ -107,7 +107,7 @@ export default function Warehouse() {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Фильтр по остатку
               </label>
-              <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+              <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]">
                 <option value="">Все товары</option>
                 <option value="low">Мало (менее 10)</option>
                 <option value="medium">Средне (10-50)</option>
@@ -202,7 +202,7 @@ export default function Warehouse() {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex gap-2">
-                          <button className="text-indigo-600 hover:text-indigo-800">
+                          <button className="text-[#475B8D] hover:text-[#475B8D]">
                             <Edit2 className="h-4 w-4" />
                           </button>
                           <button className="text-red-600 hover:text-red-800">

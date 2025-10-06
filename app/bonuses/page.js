@@ -24,7 +24,7 @@ export default function Bonuses() {
           <div className="card p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Настройка</h3>
-              <Gift className="h-5 w-5 text-indigo-600" />
+              <Gift className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Настройка бонусных программ.</p>
           </div>
@@ -32,7 +32,7 @@ export default function Bonuses() {
           <div className="card p-6 hover:shadow-md transition-shadow cursor-pointer">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Акции</h3>
-              <TrendingUp className="h-5 w-5 text-indigo-600" />
+              <TrendingUp className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Создание и управление акциями.</p>
           </div>
@@ -120,7 +120,7 @@ export default function Bonuses() {
             </table>
           </div>
           <div className="p-4 border-t flex justify-center gap-1">
-            <button className="px-3 py-1 bg-indigo-600 text-white rounded">1</button>
+            <button className="px-3 py-1 bg-[#475B8D] text-white rounded">1</button>
             <button className="px-3 py-1 hover:bg-gray-100 rounded">2</button>
             <button className="px-3 py-1 hover:bg-gray-100 rounded">3</button>
             <button className="px-3 py-1 hover:bg-gray-100 rounded">4</button>

@@ -54,7 +54,7 @@ export default function Layout({ children }) {
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-6 border-b">
-            <h1 className="text-2xl font-bold text-indigo-600">Hisobly</h1>
+            <h1 className="text-2xl font-bold text-[#475B8D]">Hisobly</h1>
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden"
@@ -83,8 +83,8 @@ export default function Layout({ children }) {
           {/* User section */}
           <div className="border-t p-4">
             <div className="flex items-center gap-3 px-2 py-2">
-              <div className="h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                <span className="text-indigo-600 font-semibold">
+              <div className="h-10 w-10 rounded-full bg-[#475B8D] flex items-center justify-center">
+                <span className="text-[#475B8D] font-semibold">
                   {user?.name?.charAt(0) || 'U'}
                 </span>
               </div>
@@ -107,7 +107,7 @@ export default function Layout({ children }) {
       {/* Main content */}
       <div className="lg:pl-64">
         {/* Top bar */}
-        <header className="bg-white shadow-sm border-b">
+        {/* <header className="bg-white shadow-sm border-b">
           <div className="flex h-16 items-center justify-between px-4 sm:px-6">
             <button
               onClick={() => setSidebarOpen(true)}
@@ -121,7 +121,7 @@ export default function Layout({ children }) {
               <span className="text-gray-900">{(pathname || '/').slice(1) || 'Дашборд'}</span>
             </div>
           </div>
-        </header>
+        </header> */}
 
         {/* Page content */}
         <main className="p-4 sm:p-6">

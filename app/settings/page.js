@@ -32,7 +32,7 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 py-2 px-1 border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'border-indigo-600 text-indigo-600'
+                    ? 'border-[#475B8D] text-[#475B8D]'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
@@ -56,7 +56,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     defaultValue="Hisobly"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
                 <div>
@@ -66,7 +66,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="Введите ИНН"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
                 <div>
@@ -76,7 +76,7 @@ export default function SettingsPage() {
                   <input
                     type="text"
                     placeholder="Введите адрес"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
                 <div>
@@ -86,7 +86,7 @@ export default function SettingsPage() {
                   <input
                     type="tel"
                     placeholder="+998"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
               </div>
@@ -104,7 +104,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Язык системы
                   </label>
-                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]">
                     <option>Русский</option>
                     <option>Узбекский</option>
                     <option>English</option>
@@ -114,7 +114,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Валюта
                   </label>
-                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]">
                     <option>Узбекский Сум</option>
                     <option>USD</option>
                     <option>EUR</option>
@@ -124,7 +124,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Часовой пояс
                   </label>
-                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]">
                     <option>UTC+5 (Ташкент)</option>
                   </select>
                 </div>
@@ -132,7 +132,7 @@ export default function SettingsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Формат даты
                   </label>
-                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                  <select className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]">
                     <option>DD/MM/YYYY</option>
                     <option>MM/DD/YYYY</option>
                     <option>YYYY-MM-DD</option>
@@ -166,7 +166,7 @@ export default function SettingsPage() {
                 <div className="border rounded-lg p-4">
                   <h4 className="font-medium mb-2">Последнее резервное копирование</h4>
                   <p className="text-sm text-gray-600">25 января 2025, 03:00</p>
-                  <button className="mt-2 text-sm text-indigo-600 hover:text-indigo-700">
+                  <button className="mt-2 text-sm text-[#475B8D] hover:text-[#475B8D]">
                     Скачать резервную копию
                   </button>
                 </div>

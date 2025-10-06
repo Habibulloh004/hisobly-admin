@@ -207,7 +207,7 @@ export default function Staff() {
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Создать учётную запись</h3>
-              <UserPlus className="h-5 w-5 text-indigo-600" />
+              <UserPlus className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Создание учётных записей сотрудников.</p>
           </div>
@@ -218,7 +218,7 @@ export default function Staff() {
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Учёт рабочего времени</h3>
-              <Clock className="h-5 w-5 text-indigo-600" />
+              <Clock className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Учёт рабочего времени.</p>
           </div>
@@ -229,7 +229,7 @@ export default function Staff() {
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Назначение ролей</h3>
-              <Shield className="h-5 w-5 text-indigo-600" />
+              <Shield className="h-5 w-5 text-[#475B8D]" />
             </div>
             <p className="text-gray-600">Назначение ролей и прав (кассир, администратор).</p>
           </div>
@@ -243,7 +243,7 @@ export default function Staff() {
                 <p className="text-sm text-gray-600">Всего сотрудников</p>
                 <p className="text-2xl font-bold">{stats.totalEmployees}</p>
               </div>
-              <Users className="h-8 w-8 text-indigo-500" />
+              <Users className="h-8 w-8 text-[#475B8D]" />
             </div>
           </div>
 
@@ -285,7 +285,7 @@ export default function Staff() {
               onClick={() => setActiveTab('employees')}
               className={`py-2 px-1 border-b-2 ${
                 activeTab === 'employees'
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? 'border-[#475B8D] text-[#475B8D]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -295,7 +295,7 @@ export default function Staff() {
               onClick={() => setActiveTab('roles')}
               className={`py-2 px-1 border-b-2 ${
                 activeTab === 'roles'
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? 'border-[#475B8D] text-[#475B8D]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -305,7 +305,7 @@ export default function Staff() {
               onClick={() => setActiveTab('schedule')}
               className={`py-2 px-1 border-b-2 ${
                 activeTab === 'schedule'
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? 'border-[#475B8D] text-[#475B8D]'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
@@ -327,7 +327,7 @@ export default function Staff() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Поиск по имени, email или телефону..."
-                      className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     />
                   </div>
                 </div>
@@ -402,7 +402,7 @@ export default function Staff() {
                                 });
                                 setShowAddModal(true);
                               }}
-                              className="text-indigo-600 hover:text-indigo-800"
+                              className="text-[#475B8D] hover:text-[#475B8D]"
                             >
                               <Edit2 className="h-4 w-4" />
                             </button>
@@ -492,7 +492,7 @@ export default function Staff() {
                       type="text"
                       value={formData.full_name}
                       onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                       required
                     />
                   </div>
@@ -505,7 +505,7 @@ export default function Staff() {
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                       required
                     />
                   </div>
@@ -519,7 +519,7 @@ export default function Staff() {
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       placeholder="+998901234567"
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                       required
                     />
                   </div>
@@ -533,7 +533,7 @@ export default function Staff() {
                         type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={(e) => setFormData({...formData, password: e.target.value})}
-                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-10"
+                        className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D] pr-10"
                         required={!editingEmployee}
                       />
                       <button
@@ -553,7 +553,7 @@ export default function Staff() {
                     <select
                       value={formData.role_id}
                       onChange={(e) => setFormData({...formData, role_id: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                       required
                     >
                       <option value="">Выберите роль</option>
@@ -570,7 +570,7 @@ export default function Staff() {
                     <select
                       value={formData.gender}
                       onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     >
                       <option value="male">Мужской</option>
                       <option value="female">Женский</option>
@@ -585,7 +585,7 @@ export default function Staff() {
                       type="date"
                       value={formData.birth_date}
                       onChange={(e) => setFormData({...formData, birth_date: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     />
                   </div>
 
@@ -598,7 +598,7 @@ export default function Staff() {
                       value={formData.serial_number}
                       onChange={(e) => setFormData({...formData, serial_number: e.target.value})}
                       placeholder="AB1234567"
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     />
                   </div>
 
@@ -609,7 +609,7 @@ export default function Staff() {
                     <select
                       value={formData.salary_type}
                       onChange={(e) => setFormData({...formData, salary_type: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     >
                       <option value="monthly">Месячная</option>
                       <option value="hourly">Почасовая</option>
@@ -627,7 +627,7 @@ export default function Staff() {
                       value={formData.salary_amount}
                       onChange={(e) => setFormData({...formData, salary_amount: e.target.value})}
                       placeholder="0"
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     />
                   </div>
 
@@ -639,7 +639,7 @@ export default function Staff() {
                       type="date"
                       value={formData.hire_date}
                       onChange={(e) => setFormData({...formData, hire_date: e.target.value})}
-                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                     />
                   </div>
                 </div>
@@ -652,7 +652,7 @@ export default function Staff() {
                     value={formData.address}
                     onChange={(e) => setFormData({...formData, address: e.target.value})}
                     rows="2"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
 
