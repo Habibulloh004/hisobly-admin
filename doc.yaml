@@ -1,0 +1,1199 @@
+openapi: 3.0.3
+info:
+  title: Hisobly POS API
+  version: "1.0.0"
+  description: |
+    Backend for multi-tenant retail POS (Flask + SQLite).
+    - Auth: JWT Bearer (sub=user_id, role, tenant_id)
+    - Tenant isolation via tenant_id from JWT
+    - 14-day trial; activation endpoint
+    - ETag + cache on /products
+    - Offline sync (pull/push)
+servers:
+  - url: https://hisoblyback.uz:9090
+    description: Local dev
+
+tags:
+  - name: Auth
+  - name: Tenants
+  - name: Products
+  - name: Discounts
+  - name: Sales
+  - name: Returns
+  - name: Cash Shifts
+  - name: Inventory
+  - name: Stores
+  - name: Warehouses
+  - name: Sync
+  - name: Health
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ParamLimit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 500, default: 50 }
+      description: Max items to return.
+    ParamOffset:
+      name: offset
+      in: query
+      schema: { type: integer, minimum: 0, default: 0 }
+      description: Offset (for pagination).
+    ParamOrderGeneric:
+      name: order
+      in: query
+      schema: { type: string }
+      description: Ordering, e.g. `created_at` or `-created_at`.
+    ParamWarehouseId:
+      name: warehouse_id
+      in: query
+      schema: { type: string, format: uuid }
+    ParamStoreId:
+      name: store_id
+      in: query
+      schema: { type: string, format: uuid }
+
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NoContent:
+      description: No content
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        code: { type: integer }
+        status: { type: string }
+        message: { type: string }
+        errors:
+          type: object
+          additionalProperties: true
+
+    JwtToken:
+      type: object
+      properties:
+        access_token:
+          type: string
+      required: [access_token]
+
+    AuthRegisterIn:
+      type: object
+      required: [company_name, email, password]
+      properties:
+        company_name: { type: string }
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+        full_name: { type: string }
+    AuthLoginIn:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string, format: password }
+
+    TenantOut:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        plan: { type: string, enum: [trial, basic, pro] }
+        is_active: { type: boolean }
+        trial_until: { type: string, format: date-time, nullable: true }
+        current_period_end: { type: string, format: date-time, nullable: true }
+    TenantActivateOut:
+      type: object
+      properties:
+        ok: { type: boolean }
+        is_active: { type: boolean }
+    TenantListItem:
+      allOf:
+        - $ref: '#/components/schemas/TenantOut'
+    TenantListOut:
+      type: object
+      properties:
+        status: { type: string, enum: [all, paid_active, paid_overdue, trial_active, trial_expired, disabled] }
+        limit:
+          oneOf:
+            - { type: integer }
+            - { type: string, enum: [all] }
+        offset: { type: integer }
+        count: { type: integer }
+        total: { type: integer }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TenantListItem' }
+    TenantStatsOut:
+      type: object
+      properties:
+        total: { type: integer }
+        trial_active: { type: integer }
+        trial_expired: { type: integer }
+        paid_active: { type: integer }
+        paid_overdue: { type: integer }
+        disabled: { type: integer }
+        paid_users: { type: integer }
+
+    RoleOut:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, enum: [owner, manager, cashier, accountant] }
+
+    StoreIn:
+      type: object
+      required: [name, code]
+      properties:
+        name: { type: string }
+        code: { type: string }
+        address: { type: string, nullable: true }
+        is_active: { type: boolean, default: true }
+    StoreOut:
+      allOf:
+        - $ref: '#/components/schemas/StoreIn'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+            version: { type: integer }
+
+    WarehouseIn:
+      type: object
+      required: [name, code, store_id]
+      properties:
+        name: { type: string }
+        code: { type: string }
+        store_id: { type: string, format: uuid }
+        address: { type: string, nullable: true }
+        is_active: { type: boolean, default: true }
+    WarehouseOut:
+      allOf:
+        - $ref: '#/components/schemas/WarehouseIn'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+            version: { type: integer }
+
+    ProductIn:
+      type: object
+      required: [name, price]
+      properties:
+        sku: { type: string, nullable: true }
+        barcode: { type: string, nullable: true }
+        name: { type: string }
+        category_id: { type: string, nullable: true }
+        price: { type: number, format: float }
+        cost: { type: number, format: float, default: 0.0 }
+        tax_id: { type: string, nullable: true }
+        is_active: { type: boolean, default: true }
+        unit: { type: string, default: pcs }
+        unit_code: { type: string, nullable: true }
+        ikpu_code: { type: string, nullable: true }
+        comment: { type: string, nullable: true }
+    ProductOut:
+      allOf:
+        - $ref: '#/components/schemas/ProductIn'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+            version: { type: integer }
+
+    DiscountIn:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        percent: { type: number, format: float, nullable: true }
+        amount: { type: number, format: float, nullable: true }
+        amount_fixed: { type: number, format: float, nullable: true }
+        active: { type: boolean, default: true }
+        valid_from: { type: string, format: date-time, nullable: true }
+        valid_to: { type: string, format: date-time, nullable: true }
+    DiscountOut:
+      allOf:
+        - $ref: '#/components/schemas/DiscountIn'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+            version: { type: integer }
+
+    SaleItemIn:
+      type: object
+      required: [product_id, qty, price]
+      properties:
+        product_id: { type: string, format: uuid }
+        qty: { type: number, format: float }
+        price: { type: number, format: float }
+        discount: { type: number, format: float, default: 0 }
+        tax_rate: { type: number, format: float, default: 0 }
+    PaymentIn:
+      type: object
+      required: [type, amount]
+      properties:
+        type:
+          type: string
+          enum: [cash, card, Click, Payme, Uzumbank, Bonus, Certificate, Others]
+        amount: { type: number, format: float }
+    SaleIn:
+      type: object
+      required: [store_id, items]
+      properties:
+        store_id: { type: string, format: uuid }
+        warehouse_id: { type: string, format: uuid, nullable: true }
+        discount_id: { type: string, format: uuid, nullable: true }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/SaleItemIn' }
+        payments:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentIn' }
+        note: { type: string, nullable: true }
+    SaleOut:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        tenant_id: { type: string, format: uuid }
+        store_id: { type: string, format: uuid }
+        warehouse_id: { type: string, format: uuid }
+        discount_id: { type: string, format: uuid, nullable: true }
+        subtotal: { type: number, format: float }
+        discount_total: { type: number, format: float }
+        tax_amount: { type: number, format: float }
+        total: { type: number, format: float }
+        paid: { type: number, format: float }
+        change: { type: number, format: float }
+        note: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        version: { type: integer }
+
+    ReturnIn:
+      type: object
+      required: [sale_id, product_id, qty]
+      properties:
+        sale_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        qty: { type: number, format: float }
+        reason: { type: string, nullable: true }
+        amount: { type: number, format: float, nullable: true, description: "If omitted, calculated server-side." }
+    ReturnOut:
+      allOf:
+        - $ref: '#/components/schemas/ReturnIn'
+        - type: object
+          properties:
+            id: { type: string, format: uuid }
+            created_at: { type: string, format: date-time }
+            updated_at: { type: string, format: date-time }
+            version: { type: integer }
+
+    CashShiftIn:
+      type: object
+      required: [store_id, opening_cash]
+      properties:
+        store_id: { type: string, format: uuid }
+        opening_cash: { type: number, format: float }
+    CashShiftOut:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        store_id: { type: string, format: uuid }
+        status: { type: string, enum: [open, closed] }
+        opened_at: { type: string, format: date-time }
+        opened_by: { type: string }
+        closed_at: { type: string, format: date-time, nullable: true }
+        closed_by: { type: string, nullable: true }
+        opening_cash: { type: number, format: float }
+        closing_cash: { type: number, format: float, nullable: true }
+
+    InventoryStockRow:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        warehouse_id: { type: string, format: uuid }
+        qty: { type: number, format: float }
+        warehouse:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            name: { type: string }
+            code: { type: string, nullable: true }
+            store_id: { type: string, format: uuid, nullable: true }
+            is_active: { type: boolean, nullable: true }
+        product:
+          type: object
+          nullable: true
+          properties:
+            id: { type: string, format: uuid }
+            sku: { type: string, nullable: true }
+            barcode: { type: string, nullable: true }
+            name: { type: string }
+            unit: { type: string, nullable: true }
+            unit_code: { type: string, nullable: true }
+            category_id: { type: string, nullable: true }
+            price: { type: number, format: float, nullable: true }
+            cost: { type: number, format: float, nullable: true }
+            is_active: { type: boolean, nullable: true }
+
+    SyncPullOut:
+      type: object
+      properties:
+        limit:
+          oneOf:
+            - { type: integer }
+            - { type: string, enum: [all] }
+        offset: { type: integer }
+        count: { type: integer }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ProductOut' }
+    SyncPushIn:
+      type: object
+      properties:
+        force: { type: boolean, default: false }
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              version: { type: integer }
+              sku: { type: string, nullable: true }
+              barcode: { type: string, nullable: true }
+              name: { type: string }
+              category_id: { type: string, nullable: true }
+              price: { type: number, format: float, nullable: true }
+              cost: { type: number, format: float, nullable: true }
+              tax_id: { type: string, nullable: true }
+              is_active: { type: boolean, nullable: true }
+              unit: { type: string, nullable: true }
+              unit_code: { type: string, nullable: true }
+              ikpu_code: { type: string, nullable: true }
+              comment: { type: string, nullable: true }
+    SyncPushOut:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, format: uuid }
+              status: { type: string, enum: [created, updated, skipped_older, noop] }
+              applied_version: { type: integer }
+
+paths:
+  /:
+    get:
+      tags: [Health]
+      summary: Service root
+      responses:
+        '200':
+          description: OK
+
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Register tenant + owner user (14-day trial)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthRegisterIn' }
+      responses:
+        '200':
+          description: JWT token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JwtToken' }
+        '201':
+          description: JWT token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JwtToken' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AuthLoginIn' }
+      responses:
+        '200':
+          description: JWT token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/JwtToken' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /tenants/me:
+    get:
+      tags: [Tenants]
+      summary: Current tenant info
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Tenant profile
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantOut' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /tenants/activate:
+    post:
+      tags: [Tenants]
+      summary: Activate current tenant plan (owner only)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Activation result
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantActivateOut' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /tenants/stats:
+    get:
+      tags: [Tenants]
+      summary: Public tenant statistics (no auth)
+      responses:
+        '200':
+          description: Stats
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantStatsOut' }
+
+  /tenants/list:
+    get:
+      tags: [Tenants]
+      summary: Public tenant list (no auth)
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [all, paid_active, paid_overdue, trial_active, trial_expired, disabled], default: all }
+        - name: limit
+          in: query
+          schema:
+            oneOf:
+              - { type: integer, minimum: 1, maximum: 1000, default: 100 }
+              - { type: string, enum: [all] }
+        - $ref: '#/components/parameters/ParamOffset'
+      responses:
+        '200':
+          description: List of tenants
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TenantListOut' }
+
+  /stores:
+    get:
+      tags: [Stores]
+      summary: List stores
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Stores
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/StoreOut' }
+    post:
+      tags: [Stores]
+      summary: Create store
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/StoreIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StoreOut' }
+
+  /stores/{store_id}:
+    get:
+      tags: [Stores]
+      summary: Get store
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: store_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Store
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StoreOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Stores]
+      summary: Update store
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: store_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { allOf: [ { $ref: '#/components/schemas/StoreIn' } ] }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StoreOut' }
+    delete:
+      tags: [Stores]
+      summary: Delete store
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: store_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /warehouses:
+    get:
+      tags: [Warehouses]
+      summary: List warehouses
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Warehouses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/WarehouseOut' }
+    post:
+      tags: [Warehouses]
+      summary: Create warehouse
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WarehouseIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WarehouseOut' }
+
+  /warehouses/{warehouse_id}:
+    get:
+      tags: [Warehouses]
+      summary: Get warehouse
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: warehouse_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Warehouse
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WarehouseOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Warehouses]
+      summary: Update warehouse
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: warehouse_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { allOf: [ { $ref: '#/components/schemas/WarehouseIn' } ] }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/WarehouseOut' }
+    delete:
+      tags: [Warehouses]
+      summary: Delete warehouse
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: warehouse_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /products:
+    get:
+      tags: [Products]
+      summary: List products (ETag + Conditional GET)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: If-None-Match
+          in: header
+          required: false
+          schema: { type: string }
+          description: Send previous ETag to get 304 if unchanged.
+      responses:
+        '200':
+          description: Products
+          headers:
+            ETag:
+              schema: { type: string }
+              description: Weak ETag header like `W/"<md5>"`.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductOut' }
+        '304':
+          description: Not Modified
+          headers:
+            ETag:
+              schema: { type: string }
+    post:
+      tags: [Products]
+      summary: Create product
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProductIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOut' }
+
+  /products/{product_id}:
+    get:
+      tags: [Products]
+      summary: Get product by id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Products]
+      summary: Update product
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { allOf: [ { $ref: '#/components/schemas/ProductIn' } ] }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOut' }
+    delete:
+      tags: [Products]
+      summary: Delete product
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /products/by-barcode/{code}:
+    get:
+      tags: [Products]
+      summary: Get product by barcode
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /products/by-sku/{sku}:
+    get:
+      tags: [Products]
+      summary: Get product by exact SKU
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sku
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Product
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProductOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /products/by-name/{name}:
+    get:
+      tags: [Products]
+      summary: Find products by name (icontains)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductOut' }
+
+  /products/by-category/{category_id}:
+    get:
+      tags: [Products]
+      summary: Find products by category id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: category_id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ProductOut' }
+
+  /discounts:
+    get:
+      tags: [Discounts]
+      summary: List discounts
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Discounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/DiscountOut' }
+    post:
+      tags: [Discounts]
+      summary: Create discount
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DiscountIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiscountOut' }
+
+  /discounts/{discount_id}:
+    get:
+      tags: [Discounts]
+      summary: Get discount by id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: discount_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Discount
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiscountOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Discounts]
+      summary: Update discount
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: discount_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { allOf: [ { $ref: '#/components/schemas/DiscountIn' } ] }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DiscountOut' }
+    delete:
+      tags: [Discounts]
+      summary: Delete discount
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: discount_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /cashshifts:
+    get:
+      tags: [Cash Shifts]
+      summary: List cash shifts
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200':
+          description: Cash shifts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CashShiftOut' }
+    post:
+      tags: [Cash Shifts]
+      summary: Open cash shift
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CashShiftIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CashShiftOut' }
+
+  /cashshifts/{shift_id}/close:
+    post:
+      tags: [Cash Shifts]
+      summary: Close cash shift
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: shift_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Closed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CashShiftOut' }
+
+  /sales:
+    get:
+      tags: [Sales]
+      summary: List sales
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/ParamStoreId'
+        - $ref: '#/components/parameters/ParamWarehouseId'
+        - $ref: '#/components/parameters/ParamOrderGeneric'
+        - $ref: '#/components/parameters/ParamLimit'
+        - $ref: '#/components/parameters/ParamOffset'
+      responses:
+        '200':
+          description: Sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/SaleOut' }
+    post:
+      tags: [Sales]
+      summary: Create sale (atomic)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SaleIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SaleOut' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /sales/{sale_id}:
+    get:
+      tags: [Sales]
+      summary: Get sale by id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sale_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Sale
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SaleOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /returns:
+    get:
+      tags: [Returns]
+      summary: List returns
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sale_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: product_id
+          in: query
+          schema: { type: string, format: uuid }
+        - name: date_from
+          in: query
+          schema: { type: string, format: date-time }
+        - name: date_to
+          in: query
+          schema: { type: string, format: date-time }
+        - $ref: '#/components/parameters/ParamLimit'
+        - $ref: '#/components/parameters/ParamOffset'
+      responses:
+        '200':
+          description: Returns
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ReturnOut' }
+    post:
+      tags: [Returns]
+      summary: Create return (stock increment)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReturnIn' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReturnOut' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+
+  /returns/{return_id}:
+    get:
+      tags: [Returns]
+      summary: Get return by id
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: return_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Return
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReturnOut' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Returns]
+      summary: Delete return (revert stock)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: return_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '204': { $ref: '#/components/responses/NoContent' }
+
+  /returns/for-sale/{sale_id}:
+    get:
+      tags: [Returns]
+      summary: List returns for sale
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: sale_id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Returns
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ReturnOut' }
+
+  /inventory/stock:
+    get:
+      tags: [Inventory]
+      summary: Stock levels
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: product_id
+          in: query
+          schema: { type: string, format: uuid }
+        - $ref: '#/components/parameters/ParamWarehouseId'
+        - $ref: '#/components/parameters/ParamStoreId'
+        - name: include
+          in: query
+          schema:
+            type: string
+            description: Comma list. Supported: "warehouse", "product"
+        - name: order
+          in: query
+          schema:
+            type: string
+            description: qty|-qty|product|-product|updated_at|-updated_at
+        - $ref: '#/components/parameters/ParamLimit'
+        - $ref: '#/components/parameters/ParamOffset'
+      responses:
+        '200':
+          description: Stock rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/InventoryStockRow' }
+
+  /sync/pull:
+    get:
+      tags: [Sync]
+      summary: Pull changed products since timestamp
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: since
+          in: query
+          schema: { type: string, format: date-time }
+        - name: order
+          in: query
+          schema: { type: string, enum: [updated_at, -updated_at], default: -updated_at }
+        - name: limit
+          in: query
+          schema:
+            oneOf:
+              - { type: integer, minimum: 1, maximum: 500, default: 100 }
+              - { type: string, enum: [all] }
+        - $ref: '#/components/parameters/ParamOffset'
+      responses:
+        '200':
+          description: Changed products
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncPullOut' }
+
+  /sync/push:
+    post:
+      tags: [Sync]
+      summary: Push product changes (upsert with versioning)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SyncPushIn' }
+      responses:
+        '200':
+          description: Result of push
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SyncPushOut' }
+        '400': { $ref: '#/components/responses/BadRequest' }
