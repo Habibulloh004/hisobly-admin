@@ -106,10 +106,18 @@ export const productAPI = {
     if (data.sku && data.sku.trim()) payload.sku = data.sku.trim();
     if (data.barcode && data.barcode.trim()) payload.barcode = data.barcode.trim();
     if (data.cost !== undefined && data.cost !== '') payload.cost = parseFloat(data.cost) || 0;
-    if (data.category_id && data.category_id.trim()) payload.category_id = data.category_id.trim();
+    // Only send category_id if it looks like a UUID (backend expects uuid format)
+    if (data.category_id && /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(String(data.category_id).trim())) {
+      payload.category_id = String(data.category_id).trim();
+    }
     if (data.tax_id && data.tax_id.trim()) payload.tax_id = data.tax_id.trim();
     if (data.is_active !== undefined) payload.is_active = Boolean(data.is_active);
-    if (data.unit && data.unit !== 'pcs') payload.unit = data.unit;
+    // Normalize unit codes to backend values; ignore UI labels like 'шт'
+    if (data.unit && data.unit !== 'pcs') {
+      const unit = String(data.unit).trim();
+      const allowed = new Set(['pcs','kg','g','l','ml','m','m2','m3','box','pack']);
+      if (allowed.has(unit)) payload.unit = unit; // only send if valid
+    }
     if (data.unit_code && data.unit_code.trim()) payload.unit_code = data.unit_code.trim();
     if (data.ikpu_code && data.ikpu_code.trim()) payload.ikpu_code = data.ikpu_code.trim();
     if (data.comment && data.comment.trim()) payload.comment = data.comment.trim();
@@ -126,10 +134,19 @@ export const productAPI = {
     if (data.sku !== undefined) payload.sku = data.sku.trim() || null;
     if (data.barcode !== undefined) payload.barcode = data.barcode.trim() || null;
     if (data.cost !== undefined) payload.cost = parseFloat(data.cost) || 0;
-    if (data.category_id !== undefined) payload.category_id = data.category_id.trim() || null;
+    if (data.category_id !== undefined) {
+      const cid = String(data.category_id).trim();
+      payload.category_id = cid
+        ? (/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(cid) ? cid : null)
+        : null;
+    }
     if (data.tax_id !== undefined) payload.tax_id = data.tax_id.trim() || null;
     if (data.is_active !== undefined) payload.is_active = Boolean(data.is_active);
-    if (data.unit !== undefined) payload.unit = data.unit || 'pcs';
+    if (data.unit !== undefined) {
+      const unit = String(data.unit || '').trim();
+      const allowed = new Set(['pcs','kg','g','l','ml','m','m2','m3','box','pack']);
+      payload.unit = allowed.has(unit) ? unit : 'pcs';
+    }
     if (data.unit_code !== undefined) payload.unit_code = data.unit_code.trim() || null;
     if (data.ikpu_code !== undefined) payload.ikpu_code = data.ikpu_code.trim() || null;
     if (data.comment !== undefined) payload.comment = data.comment.trim() || null;
@@ -137,9 +154,9 @@ export const productAPI = {
     return api.patch(`/products/${id}`, payload);
   },
   delete: (id) => api.delete(`/products/${id}`),
-  getByBarcode: (code) => api.get(`/products/by-barcode/${code}`),
-  getBySku: (sku) => api.get(`/products/by-sku/${sku}`),
-  getByName: (name) => api.get(`/products/by-name/${name}`),
+  getByBarcode: (code) => api.get(`/products/by-barcode/${encodeURIComponent(code)}`),
+  getBySku: (sku) => api.get(`/products/by-sku/${encodeURIComponent(sku)}`),
+  getByName: (name) => api.get(`/products/by-name/${encodeURIComponent(name)}`),
   getByCategory: (categoryId) => api.get(`/products/by-category/${categoryId}`),
 };
 
