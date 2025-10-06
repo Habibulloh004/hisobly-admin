@@ -32,6 +32,7 @@ export default function Login() {
 
       const response = await endpoint(data);
 
+      console.log(response)
       if (response.data.access_token) {
         login(response.data.access_token, { email: formData.email });
         toast.success(isLogin ? 'Успешный вход!' : 'Регистрация успешна!');
@@ -145,4 +146,3 @@ export default function Login() {
     </div>
   );
 }
-
