@@ -3,8 +3,9 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
-// Route all API traffic through Next.js route handlers
-const API_BASE_URL = '/api';
+// Prefer direct backend if provided; fallback to Next.js proxy
+// Set NEXT_PUBLIC_API_BASE to e.g. https://hisoblyback.uz:9090 to bypass server.mjs
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE || 'https://hisoblyback.uz:9090';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

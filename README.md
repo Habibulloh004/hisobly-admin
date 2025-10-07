@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## API Base Configuration
+
+By default, API requests go through the custom proxy at `/api` (handled by `server.mjs`). To call the backend directly from the browser using `utils/api.js`, set an environment variable in `.env.local`:
+
+```
+NEXT_PUBLIC_API_BASE=https://hisoblyback.uz:9090
+```
+
+Notes:
+- Ensure the backend allows CORS for your app origin when calling directly from the browser.
+- If unset, the app will continue to use the `/api` proxy.
