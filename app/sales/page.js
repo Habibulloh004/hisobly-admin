@@ -273,10 +273,6 @@ export default function Sales() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Управление продажами</h1>
           <div className="flex gap-3">
-            <button className="btn-secondary flex items-center gap-2">
-              <Download className="h-5 w-5" />
-              Экспорт
-            </button>
             <button 
               onClick={() => setShowCreateModal(true)}
               className="btn-primary flex items-center gap-2"

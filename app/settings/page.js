@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { Settings, Globe, Shield, Database, Bell, Users, Save, Plus, Edit2, Trash2, Check, X } from 'lucide-react';
+import { Settings, Globe, Shield, Database, Bell, Users, Save, Plus, Edit2, Trash2, Check, X, DollarSign } from 'lucide-react';
 import { settingsAPI, tenantAPI, storeAPI } from '@/utils/api';
 import toast from 'react-hot-toast';
 
@@ -62,6 +62,31 @@ export default function SettingsPage() {
     monthly_report: true
   });
 
+  // Payment settings
+  const [paymentSettings, setPaymentSettings] = useState({
+    enabled_methods: {
+      cash: true,
+      card: true,
+      Click: false,
+      Payme: false,
+      Uzumbank: false,
+      Bonus: false,
+      Certificate: false,
+      Others: true
+    },
+    default_method: 'cash',
+    gateways: {
+      Click: { merchant_id: '', service_id: '', secret_key: '' },
+      Payme: { merchant_id: '', test_mode: false },
+      Uzumbank: { merchant_id: '', terminal_id: '', secret_key: '' }
+    },
+    receipt_settings: {
+      show_payment_details: true,
+      show_change: true,
+      split_payments: true
+    }
+  });
+
   // Equipment form
   const [equipmentForm, setEquipmentForm] = useState({
     name: '',
@@ -75,11 +100,12 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'general', name: 'Общие настройки', icon: Settings },
-    { id: 'localization', name: 'Локализация', icon: Globe },
-    { id: 'security', name: 'Безопасность', icon: Shield },
-    { id: 'backup', name: 'Резервное копирование', icon: Database },
-    { id: 'notifications', name: 'Уведомления', icon: Bell },
-    { id: 'equipment', name: 'Оборудование', icon: Settings },
+    // { id: 'localization', name: 'Локализация', icon: Globe },
+    // { id: 'security', name: 'Безопасность', icon: Shield },
+    // { id: 'backup', name: 'Резервное копирование', icon: Database },
+    // { id: 'notifications', name: 'Уведомления', icon: Bell },
+    { id: 'payments', name: 'Оплата', icon: DollarSign },
+    // { id: 'equipment', name: 'Оборудование', icon: Settings },
   ];
 
   useEffect(() => {
@@ -99,6 +125,7 @@ export default function SettingsPage() {
       const savedSecurity = localStorage.getItem('settings_security');
       const savedBackup = localStorage.getItem('settings_backup');
       const savedNotifications = localStorage.getItem('settings_notifications');
+      const savedPayments = localStorage.getItem('settings_payments');
       const savedEquipment = localStorage.getItem('settings_equipment');
       
       if (savedGeneral) setGeneralSettings(JSON.parse(savedGeneral));
@@ -106,6 +133,7 @@ export default function SettingsPage() {
       if (savedSecurity) setSecuritySettings(JSON.parse(savedSecurity));
       if (savedBackup) setBackupSettings(JSON.parse(savedBackup));
       if (savedNotifications) setNotificationSettings(JSON.parse(savedNotifications));
+      if (savedPayments) setPaymentSettings(JSON.parse(savedPayments));
       if (savedEquipment) setEquipment(JSON.parse(savedEquipment));
       
       // If we have data from API, merge it
@@ -179,6 +207,17 @@ export default function SettingsPage() {
     toast.success('Настройки уведомлений сохранены');
   };
 
+  const savePaymentSettings = async () => {
+    try {
+      localStorage.setItem('settings_payments', JSON.stringify(paymentSettings));
+      // Could also sync to backend if there was an endpoint
+      // await settingsAPI.updatePayments(paymentSettings);
+      toast.success('Настройки оплаты сохранены');
+    } catch (error) {
+      toast.error('Ошибка при сохранении настроек оплаты');
+    }
+  };
+
   const createBackup = async () => {
     setLoading(true);
     try {
@@ -208,6 +247,7 @@ export default function SettingsPage() {
         security: securitySettings,
         backup: backupSettings,
         notifications: notificationSettings,
+        payments: paymentSettings,
         equipment: equipment
       }
     };
@@ -328,66 +368,7 @@ export default function SettingsPage() {
                     className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    ИНН
-                  </label>
-                  <input
-                    type="text"
-                    value={generalSettings.inn}
-                    onChange={(e) => setGeneralSettings({...generalSettings, inn: e.target.value})}
-                    placeholder="Введите ИНН"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Адрес
-                  </label>
-                  <input
-                    type="text"
-                    value={generalSettings.address}
-                    onChange={(e) => setGeneralSettings({...generalSettings, address: e.target.value})}
-                    placeholder="Введите адрес"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Телефон
-                  </label>
-                  <input
-                    type="tel"
-                    value={generalSettings.phone}
-                    onChange={(e) => setGeneralSettings({...generalSettings, phone: e.target.value})}
-                    placeholder="+998"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    value={generalSettings.email}
-                    onChange={(e) => setGeneralSettings({...generalSettings, email: e.target.value})}
-                    placeholder="email@example.com"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Веб-сайт
-                  </label>
-                  <input
-                    type="url"
-                    value={generalSettings.website}
-                    onChange={(e) => setGeneralSettings({...generalSettings, website: e.target.value})}
-                    placeholder="https://example.com"
-                    className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
-                  />
-                </div>
+                
               </div>
               
               {/* Store Information */}
@@ -793,6 +774,287 @@ export default function SettingsPage() {
                     Сохранить изменения
                   </button>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'payments' && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-4">Настройки оплаты</h3>
+              
+              {/* Payment Methods */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Способы оплаты</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Object.entries(paymentSettings.enabled_methods).map(([method, enabled]) => (
+                    <label key={method} className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        onChange={(e) => setPaymentSettings({
+                          ...paymentSettings,
+                          enabled_methods: {
+                            ...paymentSettings.enabled_methods,
+                            [method]: e.target.checked
+                          }
+                        })}
+                        className="rounded"
+                      />
+                      <span className="text-sm font-medium">{method === 'cash' ? 'Наличные' : method === 'card' ? 'Карта' : method}</span>
+                    </label>
+                  ))}
+                </div>
+                
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Способ оплаты по умолчанию
+                  </label>
+                  <select
+                    value={paymentSettings.default_method}
+                    onChange={(e) => setPaymentSettings({...paymentSettings, default_method: e.target.value})}
+                    className="w-full md:w-64 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
+                  >
+                    {Object.entries(paymentSettings.enabled_methods)
+                      .filter(([_, enabled]) => enabled)
+                      .map(([method]) => (
+                        <option key={method} value={method}>
+                          {method === 'cash' ? 'Наличные' : method === 'card' ? 'Карта' : method}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Payment Gateways Configuration */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Настройки платёжных систем</h4>
+                
+                {/* Click Settings */}
+                {paymentSettings.enabled_methods.Click && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded">
+                    <h5 className="font-medium mb-2 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Click
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Merchant ID</label>
+                        <input
+                          type="text"
+                          value={paymentSettings.gateways.Click.merchant_id}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Click: { ...paymentSettings.gateways.Click, merchant_id: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Merchant ID"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Service ID</label>
+                        <input
+                          type="text"
+                          value={paymentSettings.gateways.Click.service_id}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Click: { ...paymentSettings.gateways.Click, service_id: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Service ID"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm text-gray-700 mb-1">Secret Key</label>
+                        <input
+                          type="password"
+                          value={paymentSettings.gateways.Click.secret_key}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Click: { ...paymentSettings.gateways.Click, secret_key: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Secret Key"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Payme Settings */}
+                {paymentSettings.enabled_methods.Payme && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded">
+                    <h5 className="font-medium mb-2 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Payme
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Merchant ID</label>
+                        <input
+                          type="text"
+                          value={paymentSettings.gateways.Payme.merchant_id}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Payme: { ...paymentSettings.gateways.Payme, merchant_id: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Merchant ID"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                      <div className="flex items-end">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            checked={paymentSettings.gateways.Payme.test_mode}
+                            onChange={(e) => setPaymentSettings({
+                              ...paymentSettings,
+                              gateways: {
+                                ...paymentSettings.gateways,
+                                Payme: { ...paymentSettings.gateways.Payme, test_mode: e.target.checked }
+                              }
+                            })}
+                            className="rounded"
+                          />
+                          <span className="text-sm">Тестовый режим</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Uzumbank Settings */}
+                {paymentSettings.enabled_methods.Uzumbank && (
+                  <div className="mb-4 p-3 bg-gray-50 rounded">
+                    <h5 className="font-medium mb-2 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Uzumbank
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Merchant ID</label>
+                        <input
+                          type="text"
+                          value={paymentSettings.gateways.Uzumbank.merchant_id}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Uzumbank: { ...paymentSettings.gateways.Uzumbank, merchant_id: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Merchant ID"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-700 mb-1">Terminal ID</label>
+                        <input
+                          type="text"
+                          value={paymentSettings.gateways.Uzumbank.terminal_id}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Uzumbank: { ...paymentSettings.gateways.Uzumbank, terminal_id: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Terminal ID"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label className="block text-sm text-gray-700 mb-1">Secret Key</label>
+                        <input
+                          type="password"
+                          value={paymentSettings.gateways.Uzumbank.secret_key}
+                          onChange={(e) => setPaymentSettings({
+                            ...paymentSettings,
+                            gateways: {
+                              ...paymentSettings.gateways,
+                              Uzumbank: { ...paymentSettings.gateways.Uzumbank, secret_key: e.target.value }
+                            }
+                          })}
+                          placeholder="Введите Secret Key"
+                          className="w-full px-3 py-2 border rounded text-sm"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Receipt Settings */}
+              <div className="border rounded-lg p-4">
+                <h4 className="font-medium mb-3">Настройки чеков</h4>
+                <div className="space-y-3">
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={paymentSettings.receipt_settings.show_payment_details}
+                      onChange={(e) => setPaymentSettings({
+                        ...paymentSettings,
+                        receipt_settings: {
+                          ...paymentSettings.receipt_settings,
+                          show_payment_details: e.target.checked
+                        }
+                      })}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Показывать детали оплаты в чеке</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={paymentSettings.receipt_settings.show_change}
+                      onChange={(e) => setPaymentSettings({
+                        ...paymentSettings,
+                        receipt_settings: {
+                          ...paymentSettings.receipt_settings,
+                          show_change: e.target.checked
+                        }
+                      })}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Показывать сдачу</span>
+                  </label>
+                  <label className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={paymentSettings.receipt_settings.split_payments}
+                      onChange={(e) => setPaymentSettings({
+                        ...paymentSettings,
+                        receipt_settings: {
+                          ...paymentSettings.receipt_settings,
+                          split_payments: e.target.checked
+                        }
+                      })}
+                      className="rounded"
+                    />
+                    <span className="text-sm">Разрешить разделение платежей</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex justify-end">
+                <button 
+                  onClick={savePaymentSettings}
+                  className="btn-primary flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Сохранить изменения
+                </button>
               </div>
             </div>
           )}

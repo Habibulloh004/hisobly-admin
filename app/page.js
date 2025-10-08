@@ -208,11 +208,11 @@ export default function Dashboard() {
 
           <div
             className="card p-6 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={handleCreatePromotion}
+            // onClick={handleCreatePromotion}
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-lg font-semibold">Создать новую акцию</h3>
-              <ChevronRight className="h-5 w-5 text-gray-400" />
+              {/* <ChevronRight className="h-5 w-5 text-gray-400" /> */}
             </div>
             <p className="text-gray-600">
               Добавьте новую акцию, чтобы привлекать клиентов.

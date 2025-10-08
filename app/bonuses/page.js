@@ -124,6 +124,17 @@ export default function Bonuses() {
   }).length;
 
   return (
+      <Layout>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center"></div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Скоро...
+          </h1>
+        </div>
+      </Layout>
+    );
+    
+  return (
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">

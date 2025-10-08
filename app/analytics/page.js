@@ -284,22 +284,6 @@ export default function Analytics() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Отчеты и аналитика</h1>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => fetchAnalyticsData()}
-              className="btn-secondary flex items-center gap-2"
-            >
-              <RefreshCw className="h-5 w-5" />
-              Обновить
-            </button>
-            <button 
-              onClick={() => handleExport(activeTab)}
-              className="btn-primary flex items-center gap-2"
-            >
-              <Download className="h-5 w-5" />
-              Экспорт
-            </button>
-          </div>
         </div>
 
         {/* Quick Actions */}

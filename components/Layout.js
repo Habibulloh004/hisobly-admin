@@ -53,8 +53,8 @@ export default function Layout({ children }) {
       } fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transition-transform lg:translate-x-0`}>
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center justify-between px-6 border-b">
-            <h1 className="text-2xl font-bold text-[#475B8D]">Hisobly</h1>
+          <div className="flex h-16 items-center justify-between px-6 border-b ">
+            <h1 className="text-2xl font-bold text-center w-full text-[#475B8D]">Hisobly</h1>
             <button
               onClick={() => setSidebarOpen(false)}
               className="lg:hidden"
