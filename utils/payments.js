@@ -42,6 +42,9 @@ export const expiryToBackend = (value = "") => {
   return `${digits.slice(2, 4)}${digits.slice(0, 2)}`;
 };
 
+export const normalizeExpiryDigits = (value = "") =>
+  stripDigits(value).slice(0, 4);
+
 export const isExpiryInFuture = (value = "") => {
   const digits = stripDigits(value);
   if (digits.length !== 4) return false;
@@ -100,4 +103,66 @@ export const readLocalSubscription = () => {
   } catch {
     return null;
   }
+};
+
+// ===== Subscription status helpers =====
+// Possible statuses: all, paid_active, paid_overdue, trial_active, trial_expired, disabled
+export const computeSubscriptionStatus = (tenant) => {
+  if (!tenant) return 'disabled';
+
+  const now = Date.now();
+  const trialMs = tenant?.trial_until ? new Date(tenant.trial_until).getTime() : null;
+  const paidMs = tenant?.current_period_end ? new Date(tenant.current_period_end).getTime() : null;
+  const isActive = tenant?.is_active !== false;
+
+  if (!isActive) return 'disabled';
+
+  // Prefer explicit plan branching
+  if (tenant.plan === 'pro') {
+    if (paidMs && paidMs >= now) return 'paid_active';
+    return 'paid_overdue';
+  }
+  if (tenant.plan === 'trial') {
+    if (trialMs && trialMs >= now) return 'trial_active';
+    return 'trial_expired';
+  }
+
+  // Fallback from dates if plan unknown
+  if (paidMs && paidMs >= now) return 'paid_active';
+  if (paidMs && paidMs < now) return 'paid_overdue';
+  if (trialMs && trialMs >= now) return 'trial_active';
+  if (trialMs && trialMs < now) return 'trial_expired';
+  return 'disabled';
+};
+
+export const subscriptionStatusLabel = (status) => {
+  switch (status) {
+    case 'paid_active':
+      return 'Оплачено';
+    case 'paid_overdue':
+      return 'Оплата просрочена';
+    case 'trial_active':
+      return 'Пробный период';
+    case 'trial_expired':
+      return 'Пробный завершён';
+    case 'disabled':
+      return 'Неактивен';
+    default:
+      return status;
+  }
+};
+
+export const describeSubscription = (tenant) => {
+  const status = computeSubscriptionStatus(tenant);
+  const label = subscriptionStatusLabel(status);
+  const until =
+    status.startsWith('trial')
+      ? tenant?.trial_until || null
+      : status.startsWith('paid')
+      ? tenant?.current_period_end || null
+      : null;
+  const untilText = until
+    ? new Date(until).toLocaleDateString('ru-RU')
+    : null;
+  return { status, label, until, untilText };
 };

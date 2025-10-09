@@ -177,13 +177,15 @@ export default function Dashboard() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Дашборд</h1>
           {tenantInfo && (
-            <div className="text-sm text-gray-600">
-              {tenantInfo.name} - {tenantInfo.is_active ? 'Активен' : 'Неактивен'}
+            <div className="flex flex-col items-start text-sm text-gray-600 md:items-end">
+              <span>
+                {tenantInfo.name} - {tenantInfo.is_active ? 'Активен' : 'Неактивен'}
+              </span>
               {tenantInfo.trial_until && (
-                <span className="ml-2 px-2 py-1 bg-yellow-100 text-yellow-700 rounded">
+                <span className="mt-1 inline-flex items-center gap-2 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-700">
                   Пробный период до {new Date(tenantInfo.trial_until).toLocaleDateString('ru-RU')}
                 </span>
               )}
@@ -192,7 +194,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <div
             className="card p-6 hover:shadow-md transition-shadow cursor-pointer"
             onClick={handleAddProduct}
@@ -235,7 +237,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -345,7 +347,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           {/* Low Stock Alerts */}
           {lowStockAlerts.length > 0 && (
             <div className="card p-6">
@@ -356,7 +358,7 @@ export default function Dashboard() {
                 <AlertCircle className="h-5 w-5 text-yellow-500" />
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[480px] text-sm">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-2">Товар</th>
@@ -388,7 +390,7 @@ export default function Dashboard() {
           <div className="card p-6">
             <h3 className="text-lg font-semibold mb-4">Последние продажи</h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full min-w-[480px] text-sm">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-2">№ чека</th>
@@ -437,9 +439,9 @@ export default function Dashboard() {
 
         {/* Financial Chart */}
         <div className="card p-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
             <h3 className="text-lg font-semibold">Финансовая статистика</h3>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-red-500 rounded-full"></div>
                 <span className="text-sm">
@@ -463,8 +465,8 @@ export default function Dashboard() {
 
           {financialData.total > 0 ? (
             <>
-              <div className="flex items-center justify-center">
-                <div className="w-64 h-64">
+              <div className="flex flex-col items-center justify-center sm:flex-row sm:gap-6">
+                <div className="h-56 w-56 sm:h-64 sm:w-64">
                   <Doughnut
                     data={donutData}
                     options={{

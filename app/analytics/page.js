@@ -282,14 +282,17 @@ export default function Analytics() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Отчеты и аналитика</h1>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Отчеты и аналитика</h1>
+            <p className="text-sm text-gray-500">Следите за ключевыми показателями на любом устройстве</p>
+          </div>
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <div 
-            className={`card p-6 hover:shadow-md transition-shadow cursor-pointer ${
+            className={`card p-5 hover:shadow-md transition-shadow cursor-pointer ${
               activeTab === 'financial' ? 'border-2 border-[#475B8D]' : ''
             }`}
             onClick={() => setActiveTab('financial')}
@@ -330,14 +333,14 @@ export default function Analytics() {
 
         {/* Date Range Filter */}
         <div className="card p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-wrap gap-2">
               {['today', 'week', 'month', 'quarter', 'year'].map(period => (
                 <button
                   key={period}
                   onClick={() => handleQuickDateRange(period)}
-                  className={`px-3 py-1 rounded ${
-                    dateRange.period === period ? 'bg-[#475B8D] text-white' : 'bg-gray-100'
+                  className={`px-3 py-1 rounded-full text-sm ${
+                    dateRange.period === period ? 'bg-[#475B8D] text-white shadow-sm' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
                   {period === 'today' && 'Сегодня'}
@@ -348,21 +351,23 @@ export default function Analytics() {
                 </button>
               ))}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
               <Calendar className="h-5 w-5 text-gray-400" />
-              <input
-                type="date"
-                value={dateRange.from}
-                onChange={(e) => setDateRange({...dateRange, from: e.target.value})}
-                className="px-3 py-1 border rounded"
-              />
-              <span>—</span>
-              <input
-                type="date"
-                value={dateRange.to}
-                onChange={(e) => setDateRange({...dateRange, to: e.target.value})}
-                className="px-3 py-1 border rounded"
-              />
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                <input
+                  type="date"
+                  value={dateRange.from}
+                  onChange={(e) => setDateRange({...dateRange, from: e.target.value})}
+                  className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#475B8D] focus:outline-none focus:ring-2 focus:ring-[#475B8D]/20"
+                />
+                <span className="text-center text-sm text-gray-500">—</span>
+                <input
+                  type="date"
+                  value={dateRange.to}
+                  onChange={(e) => setDateRange({...dateRange, to: e.target.value})}
+                  className="w-full rounded-lg border px-3 py-2 text-sm focus:border-[#475B8D] focus:outline-none focus:ring-2 focus:ring-[#475B8D]/20"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -376,7 +381,7 @@ export default function Analytics() {
             {/* Key Metrics */}
             {activeTab === 'financial' && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                   <div className="card p-4">
                     <p className="text-sm text-gray-600">Выручка</p>
                     <p className="text-2xl font-bold text-green-600">
@@ -437,7 +442,7 @@ export default function Analytics() {
 
             {activeTab === 'sales' && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="card p-4">
                     <p className="text-sm text-gray-600">Общие продажи</p>
                     <p className="text-2xl font-bold">{salesData.totalSales.toLocaleString()} сум</p>
@@ -488,7 +493,7 @@ export default function Analytics() {
                 <div className="card p-6">
                   <h3 className="text-lg font-semibold mb-4">Топ товаров</h3>
                   <div className="overflow-x-auto">
-                    <table className="w-full">
+                    <table className="w-full min-w-[640px]">
                       <thead className="bg-gray-50 border-b">
                         <tr>
                           <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">№</th>
@@ -527,7 +532,7 @@ export default function Analytics() {
 
             {activeTab === 'products' && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                   <div className="card p-4">
                     <p className="text-sm text-gray-600">Всего товаров</p>
                     <p className="text-2xl font-bold">{productData.totalProducts}</p>
@@ -587,7 +592,7 @@ export default function Analytics() {
                         <td className="px-6 py-4 text-sm">{String(report.id).padStart(2, '0')}</td>
                         <td className="px-6 py-4 text-sm font-medium">{report.name}</td>
                         <td className="px-6 py-4">
-                          <span className="px-2 py-1 bg-[#475B8D] text-[#475B8D] rounded text-xs">
+                          <span className="px-2 py-1 rounded-full bg-[#475B8D]/10 text-[#475B8D] text-xs font-semibold">
                             {report.type}
                           </span>
                         </td>

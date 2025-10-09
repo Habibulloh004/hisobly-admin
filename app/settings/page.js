@@ -5,7 +5,7 @@ import { Settings, DollarSign, Save, Crown, ShieldCheck, Clock4 } from "lucide-r
 import { settingsAPI, tenantAPI, storeAPI } from "@/utils/api";
 import toast from "react-hot-toast";
 import PaymentModal from "@/components/PaymentModal";
-import { readLocalSubscription, storeSubscriptionLocally } from "@/utils/payments";
+import { readLocalSubscription, storeSubscriptionLocally, describeSubscription } from "@/utils/payments";
 
 const SUBSCRIPTION_DURATION_MS = 30 * 24 * 60 * 60 * 1000;
 
@@ -178,9 +178,10 @@ export default function SettingsPage() {
   };
 
   const planLabel = getPlanLabel(tenantInfo?.plan);
-  const trialUntilLabel = formatDate(tenantInfo?.trial_until);
-  const subscriptionEndLabel = formatDate(tenantInfo?.current_period_end);
-  const isTrialActive = tenantInfo?.plan === "trial" && !!trialUntilLabel;
+  const sub = tenantInfo ? describeSubscription(tenantInfo) : null;
+  const statusLabel = sub?.label;
+  const statusUntil = sub?.untilText;
+  const isPaidActive = sub?.status === "paid_active";
 
   return (
     <Layout>
@@ -206,17 +207,16 @@ export default function SettingsPage() {
                     Активен
                   </span>
                 )}
+                {statusLabel && (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-700">
+                    {statusLabel}
+                  </span>
+                )}
               </div>
-              {isTrialActive && (
-                <div className="mt-1 flex items-center gap-1 text-xs text-yellow-700">
-                  <Clock4 className="h-4 w-4" />
-                  Пробный до {trialUntilLabel}
-                </div>
-              )}
-              {subscriptionEndLabel && (
+              {statusUntil && (
                 <div className="mt-1 flex items-center gap-1 text-xs text-gray-500">
                   <Clock4 className="h-4 w-4" />
-                  Оплачено до {subscriptionEndLabel}
+                  До {statusUntil}
                 </div>
               )}
             </div>
@@ -224,8 +224,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="border-b">
-          <nav className="flex gap-4">
+        <div className="border-b overflow-x-auto">
+          <nav className="flex gap-4 min-w-max sm:min-w-0">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
@@ -243,52 +243,49 @@ export default function SettingsPage() {
           </nav>
         </div>
         {/* Content */}
-        <div className="card p-6">
+        <div className="card p-4 sm:p-6">
           {/* ================= GENERAL ================= */}
           {activeTab === "general" && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Общие настройки</h3>
 
               {tenantInfo && (
-                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-5">
+                <div className="rounded-2xl border border-indigo-100 bg-indigo-50/70 p-4 sm:p-5">
                   <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-[#475B8D]">
                         Текущий план
                       </p>
                       <p className="mt-1 text-lg font-semibold text-gray-900">{planLabel}</p>
-                      {subscriptionEndLabel ? (
-                        <p className="text-sm text-gray-600">
-                          Доступ активен до {subscriptionEndLabel}
-                        </p>
-                      ) : isTrialActive ? (
-                        <p className="text-sm text-gray-600">
-                          Пробный период до {trialUntilLabel}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-gray-600">
-                          Продлите подписку, чтобы активировать PRO на 30 дней
-                        </p>
-                      )}
+                      <p className="text-sm text-gray-600">
+                        {statusLabel}
+                        {statusUntil ? ` до ${statusUntil}` : ''}
+                      </p>
                     </div>
-                    <div className="flex flex-col items-start gap-2 md:items-end">
+                    <div className="flex w-full flex-col items-stretch gap-2 sm:w-auto sm:items-end">
                       <button
                         onClick={() => setShowPayment(true)}
-                        className="btn-primary flex items-center gap-2 px-5 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
-                        disabled={subscriptionRefreshing}
+                        className="btn-primary flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-60"
+                        disabled={subscriptionRefreshing || isPaidActive}
+                        title={isPaidActive ? "Подписка активна" : undefined}
                       >
-                        {subscriptionRefreshing ? (
+                        {isPaidActive ? (
+                          <>
+                            <ShieldCheck className="h-4 w-4" /> Подписка активна
+                          </>
+                        ) : subscriptionRefreshing ? (
                           "Обновление..."
                         ) : (
                           <>
-                            <DollarSign className="h-4 w-4" />
-                            Продлить подписку
+                            <DollarSign className="h-4 w-4" /> Продлить подписку
                           </>
                         )}
                       </button>
-                      <p className="text-xs text-gray-500">
-                        После оплаты статус Pro действует 30 дней
-                      </p>
+                      {!isPaidActive && (
+                        <p className="text-xs text-gray-500 text-center sm:text-right">
+                          После оплаты статус Pro действует 30 дней
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -316,13 +313,11 @@ export default function SettingsPage() {
               {stores.length > 0 && (
                 <div>
                   <h4 className="font-medium mb-3">Склады / Магазины</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
                     {stores.map((store) => (
-                      <div key={store.id} className="border rounded-lg p-3">
-                        <p className="font-medium">{store.name}</p>
-                        <p className="text-sm text-gray-600">
-                          Код: {store.code}
-                        </p>
+                      <div key={store.id} className="rounded-lg border p-4">
+                        <p className="font-medium text-gray-900">{store.name}</p>
+                        <p className="text-sm text-gray-600">Код: {store.code}</p>
                         {store.address && (
                           <p className="text-sm text-gray-600">
                             {store.address}
@@ -343,11 +338,11 @@ export default function SettingsPage() {
                 </div>
               )}
 
-              <div className="flex justify-end">
+              <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
                 <button
                   onClick={saveGeneralSettings}
                   disabled={loading}
-                  className="btn-primary flex items-center gap-2"
+                  className="btn-primary flex w-full items-center justify-center gap-2 sm:w-auto"
                 >
                   <Save className="h-4 w-4" />
                   Сохранить

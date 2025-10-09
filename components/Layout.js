@@ -40,17 +40,17 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
       {/* Mobile sidebar backdrop */}
-      {sidebarOpen && (
-        <div 
-          className="lg:hidden fixed inset-0 z-40 bg-black bg-opacity-50"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+      <div
+        className={`fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity duration-300 lg:hidden ${
+          sidebarOpen ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={() => setSidebarOpen(false)}
+      />
 
       {/* Sidebar */}
       <aside className={`${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      } fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transition-transform lg:translate-x-0`}>
+      } fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0`}>
         <div className="flex h-full flex-col">
           {/* Logo */}
           <div className="flex h-16 items-center justify-between px-6 border-b ">
@@ -106,22 +106,15 @@ export default function Layout({ children }) {
 
       {/* Main content */}
       <div className="lg:pl-64">
-        {/* Top bar */}
-        {/* <header className="bg-white shadow-sm border-b">
-          <div className="flex h-16 items-center justify-between px-4 sm:px-6">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Главная</span>
-              <ChevronRight className="h-4 w-4" />
-              <span className="text-gray-900">{(pathname || '/').slice(1) || 'Дашборд'}</span>
-            </div>
-          </div>
-        </header> */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className={`fixed right-4 top-4 z-30 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/85 text-gray-700 shadow-lg ring-1 ring-black/5 backdrop-blur transition-all duration-300 hover:bg-white lg:hidden ${
+            sidebarOpen ? 'scale-95 rotate-90' : 'scale-100 rotate-0'
+          }`}
+          aria-label="Открыть меню"
+        >
+          {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
 
         {/* Page content */}
         <main className="p-4 sm:p-6">

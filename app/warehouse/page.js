@@ -223,13 +223,16 @@ export default function Warehouse() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Управление складом</h1>
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Управление складом</h1>
+            <p className="text-sm text-gray-500">Контролируйте остатки, склады и магазины в одном интерфейсе</p>
+          </div>
         </div>
 
         {/* Tabs */}
-        <div className="border-b">
-          <nav className="flex space-x-8">
+        <div className="border-b overflow-x-auto">
+          <nav className="flex min-w-max gap-6">
             <button
               onClick={() => setActiveTab('inventory')}
               className={`py-2 px-1 border-b-2 ${
@@ -267,7 +270,7 @@ export default function Warehouse() {
           <>
             {/* Filters */}
             <div className="card p-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Склад
@@ -324,7 +327,7 @@ export default function Warehouse() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
               <div className="card p-4">
                 <p className="text-sm text-gray-600 mb-1">Всего позиций</p>
                 <p className="text-2xl font-bold">{totalItems}</p>
@@ -345,11 +348,12 @@ export default function Warehouse() {
 
             {/* Inventory Table */}
             <div className="card">
-              <div className="p-6 border-b">
+              <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="text-lg font-semibold">Остатки на складе</h3>
+                <p className="text-sm text-gray-500">Показываются товары выбранного склада</p>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full min-w-[720px]">
                   <thead className="bg-gray-50 border-b">
                     <tr>
                       <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
@@ -442,21 +446,21 @@ export default function Warehouse() {
 
         {activeTab === 'warehouses' && (
           <div className="card">
-            <div className="p-6 border-b flex justify-between items-center">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-lg font-semibold">Управление складами</h3>
               <button 
                 onClick={() => {
                   setWarehouseForm({...warehouseForm, store_id: stores[0]?.id || ''});
                   setShowWarehouseModal(true);
                 }}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center justify-center gap-2 px-4 py-2 text-sm"
               >
                 <Plus className="h-5 w-5" />
                 Добавить склад
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[720px]">
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">№</th>
@@ -525,18 +529,18 @@ export default function Warehouse() {
 
         {activeTab === 'stores' && (
           <div className="card">
-            <div className="p-6 border-b flex justify-between items-center">
+            <div className="flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
               <h3 className="text-lg font-semibold">Управление магазинами</h3>
               <button 
                 onClick={() => setShowStoreModal(true)}
-                className="btn-primary flex items-center gap-2"
+                className="btn-primary flex items-center justify-center gap-2 px-4 py-2 text-sm"
               >
                 <Plus className="h-5 w-5" />
                 Добавить магазин
               </button>
             </div>
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full min-w-[720px]">
                 <thead className="bg-gray-50 border-b">
                   <tr>
                     <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">№</th>
@@ -605,9 +609,9 @@ export default function Warehouse() {
 
         {/* Store Modal */}
         {showStoreModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">
                   {editingStore ? 'Редактировать магазин' : 'Добавить магазин'}
                 </h2>
@@ -675,18 +679,18 @@ export default function Warehouse() {
                   </label>
                 </div>
                 
-                <div className="flex gap-3 justify-end">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => {
                       setShowStoreModal(false);
                       resetStoreForm();
                     }}
-                    className="btn-secondary"
+                    className="btn-secondary w-full sm:w-auto"
                   >
                     Отмена
                   </button>
-                  <button type="submit" className="btn-primary">
+                  <button type="submit" className="btn-primary w-full sm:w-auto">
                     {editingStore ? 'Сохранить' : 'Добавить'}
                   </button>
                 </div>
@@ -697,9 +701,9 @@ export default function Warehouse() {
 
         {/* Warehouse Modal */}
         {showWarehouseModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-md w-full">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-md rounded-lg bg-white p-5 shadow-xl">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold">
                   {editingWarehouse ? 'Редактировать склад' : 'Добавить склад'}
                 </h2>
@@ -784,18 +788,18 @@ export default function Warehouse() {
                   </label>
                 </div>
                 
-                <div className="flex gap-3 justify-end">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => {
                       setShowWarehouseModal(false);
                       resetWarehouseForm();
                     }}
-                    className="btn-secondary"
+                    className="btn-secondary w-full sm:w-auto"
                   >
                     Отмена
                   </button>
-                  <button type="submit" className="btn-primary">
+                  <button type="submit" className="btn-primary w-full sm:w-auto">
                     {editingWarehouse ? 'Сохранить' : 'Добавить'}
                   </button>
                 </div>

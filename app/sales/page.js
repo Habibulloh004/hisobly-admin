@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
-import { Plus, Search, Eye, Download, Calendar, TrendingUp, DollarSign, ShoppingCart, Package, X, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Search, Eye, Download, Calendar, TrendingUp, DollarSign, ShoppingCart, Package, X, Trash2, Edit2, RefreshCw } from 'lucide-react';
 import { salesAPI, storeAPI, warehouseAPI, productAPI, discountAPI } from '@/utils/api';
 import toast from 'react-hot-toast';
 
@@ -270,12 +270,15 @@ export default function Sales() {
     <Layout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Управление продажами</h1>
-          <div className="flex gap-3">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Управление продажами</h1>
+            <p className="text-sm text-gray-500">Создавайте чеки и отслеживайте показатели на любом устройстве</p>
+          </div>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <button 
               onClick={() => setShowCreateModal(true)}
-              className="btn-primary flex items-center gap-2"
+              className="btn-primary flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium"
             >
               <Plus className="h-5 w-5" />
               Новая продажа
@@ -284,7 +287,7 @@ export default function Sales() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="card p-4">
             <div className="flex items-center justify-between">
               <div>
@@ -330,7 +333,7 @@ export default function Sales() {
 
         {/* Filters */}
         <div className="card p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Магазин
@@ -391,8 +394,30 @@ export default function Sales() {
 
         {/* Sales Table */}
         <div className="card">
+          <div className="flex flex-col gap-2 border-b p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">История продаж</h2>
+              <p className="text-sm text-gray-500">Последние операции за выбранный период</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => fetchSales()}
+                className="btn-secondary flex items-center gap-2 px-4 py-2 text-sm"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Обновить
+              </button>
+              <button
+                onClick={() => toast.info('Экспорт скоро будет доступен')}
+                className="btn-primary flex items-center gap-2 px-4 py-2 text-sm"
+              >
+                <Download className="h-4 w-4" />
+                Экспорт
+              </button>
+            </div>
+          </div>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">
@@ -469,9 +494,9 @@ export default function Sales() {
 
         {/* Create Sale Modal */}
         {showCreateModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 sm:p-6">
+            <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white shadow-xl">
+              <div className="sticky top-0 flex items-center justify-between border-b bg-white px-4 py-3 sm:px-6 sm:py-4">
                 <h2 className="text-xl font-bold">Новая продажа</h2>
                 <button 
                   onClick={() => {
@@ -484,7 +509,7 @@ export default function Sales() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-6">
+              <div className="space-y-6 px-4 py-4 sm:px-6">
                 {/* Store and Warehouse Selection */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -543,8 +568,8 @@ export default function Sales() {
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Товары</h3>
                   <div className="border rounded-lg p-4 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-                      <div className="md:col-span-2">
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+                      <div className="md:col-span-2 relative">
                         <input
                           type="text"
                           value={productSearch}
@@ -553,7 +578,7 @@ export default function Sales() {
                           className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
                         />
                         {productSearch && (
-                          <div className="absolute bg-white border rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto z-10">
+                          <div className="absolute left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-lg border bg-white shadow-lg">
                             {filteredProducts.slice(0, 5).map(product => (
                               <div
                                 key={product.id}
@@ -610,8 +635,8 @@ export default function Sales() {
 
                     {/* Items List */}
                     {saleForm.items.length > 0 && (
-                      <div className="mt-4">
-                        <table className="w-full">
+                      <div className="mt-4 overflow-x-auto">
+                        <table className="w-full min-w-[640px]">
                           <thead className="bg-gray-50 border-b">
                             <tr>
                               <th className="text-left px-3 py-2 text-xs font-medium text-gray-500">Товар</th>
@@ -651,7 +676,7 @@ export default function Sales() {
                 <div>
                   <h3 className="text-lg font-semibold mb-3">Оплата</h3>
                   <div className="border rounded-lg p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                       <div>
                         <select
                           value={paymentForm.type}
@@ -694,12 +719,12 @@ export default function Sales() {
                     {saleForm.payments.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {saleForm.payments.map((payment, index) => (
-                          <div key={index} className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded">
-                            <span className="text-sm">{payment.type}: {payment.amount.toLocaleString()} сум</span>
+                          <div key={index} className="flex flex-wrap items-center justify-between gap-3 rounded bg-gray-50 px-3 py-2 text-sm">
+                            <span className="font-medium">{payment.type}: {payment.amount.toLocaleString()} сум</span>
                             <button
                               onClick={() => handleRemovePayment(index)}
                               className="text-red-600 hover:text-red-800"
-                            >
+                           >
                               <X className="h-4 w-4" />
                             </button>
                           </div>
@@ -766,20 +791,20 @@ export default function Sales() {
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-3 justify-end">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     onClick={() => {
                       setShowCreateModal(false);
                       resetSaleForm();
                     }}
-                    className="btn-secondary"
+                    className="btn-secondary w-full sm:w-auto"
                   >
                     Отмена
                   </button>
                   <button
                     onClick={handleCreateSale}
                     disabled={loading || saleForm.items.length === 0}
-                    className="btn-primary"
+                    className="btn-primary w-full sm:w-auto"
                   >
                     {loading ? 'Создание...' : 'Создать продажу'}
                   </button>

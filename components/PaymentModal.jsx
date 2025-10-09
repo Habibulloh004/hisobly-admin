@@ -11,6 +11,7 @@ import {
   maskCardForPreview,
   normalizeAmount,
   normalizeCardNumber,
+  normalizeExpiryDigits,
   prettyAmount,
 } from "@/utils/payments";
 
@@ -30,16 +31,18 @@ export default function PaymentModal({ onClose, onSuccess }) {
   const [result, setResult] = useState(null);
 
   const formattedCardNumber = formatCardNumberDisplay(paymentForm.cardNumber);
-  const formattedExpiry = formatExpiryDisplay(paymentForm.expireDate);
-  const backendExpiry = expiryToBackend(formattedExpiry);
+  const expiryDigits = normalizeExpiryDigits(paymentForm.expireDate);
+  const formattedExpiry = formatExpiryDisplay(expiryDigits);
+  const backendExpiry = expiryToBackend(expiryDigits);
   const formattedAmount = prettyAmount(paymentForm.amount);
 
   const canSubmit = useMemo(() => {
     const hasDots = normalizeCardNumber(paymentForm.cardNumber).length === 16;
-    const expiryOk = isExpiryInFuture(formattedExpiry);
-    const amountOk = Number(normalizeAmount(paymentForm.amount)) > 0;
+    const expiryOk = isExpiryInFuture(expiryDigits);
+    const amountValue = Number(normalizeAmount(paymentForm.amount));
+    const amountOk = amountValue >= 100000;
     return hasDots && expiryOk && amountOk;
-  }, [paymentForm, formattedExpiry]);
+  }, [paymentForm, expiryDigits]);
 
   const resetState = () => {
     setStep("enter");
@@ -60,7 +63,7 @@ export default function PaymentModal({ onClose, onSuccess }) {
   const handleExpiryChange = (value) => {
     setPaymentForm((prev) => ({
       ...prev,
-      expireDate: formatExpiryDisplay(value),
+      expireDate: normalizeExpiryDigits(value),
     }));
   };
 
@@ -83,8 +86,12 @@ export default function PaymentModal({ onClose, onSuccess }) {
       toast.error("Номер карты должен состоять из 16 цифр");
       return;
     }
-    if (!isExpiryInFuture(formattedExpiry)) {
+    if (!isExpiryInFuture(expiryDigits)) {
       toast.error("Срок действия карты некорректен");
+      return;
+    }
+    if (Number(amount) < 100000) {
+      toast.error("Минимальная сумма оплаты 100 000 сум");
       return;
     }
 
@@ -208,15 +215,13 @@ export default function PaymentModal({ onClose, onSuccess }) {
                   <input
                     type="text"
                     inputMode="numeric"
-                    maxLength={5}
-                    value={formattedExpiry}
+                    maxLength={4}
+                    value={expiryDigits}
                     onChange={(e) => handleExpiryChange(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 px-3 font-mono text-sm tracking-widest focus:border-[#475B8D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#475B8D]/20"
-                    placeholder="MM/YY"
+                    placeholder="MMYY"
                   />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Формат вводится как 09/30 → отправится 3009
-                  </p>
+                  
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -228,7 +233,7 @@ export default function PaymentModal({ onClose, onSuccess }) {
                     value={formattedAmount}
                     onChange={(e) => handleAmountChange(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 px-3 font-medium focus:border-[#475B8D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#475B8D]/20"
-                    placeholder="50 000"
+                    placeholder="100 000"
                   />
                 </div>
               </div>

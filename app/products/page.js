@@ -167,15 +167,21 @@ export default function Products() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Товары</h1>
-          <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Товары</h1>
+            <p className="text-sm text-gray-500">Управляйте каталогом и карточками товаров с любого устройства</p>
+          </div>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="btn-primary flex items-center justify-center gap-2 px-5 py-2 text-sm font-medium"
+          >
             <Plus className="h-5 w-5" /> Добавить товар
           </button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <div className="card p-4">
             <p className="text-sm text-gray-600">Всего товаров</p>
             <p className="text-2xl font-bold">{products.length}</p>
@@ -196,8 +202,8 @@ export default function Products() {
 
         {/* Filters */}
         <div className="card p-4">
-          <div className="flex gap-4">
-            <div className="flex-1 relative">
+          <div className="flex flex-col gap-4 lg:flex-row">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
@@ -207,7 +213,7 @@ export default function Products() {
                 className="w-full pl-10 pr-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#475B8D]"
               />
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => setFilterActive('all')}
                 className={`px-3 py-2 rounded-lg ${
@@ -239,7 +245,7 @@ export default function Products() {
         {/* Products Table */}
         <div className="card">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-gray-50 border-b">
                 <tr>
                   <th className="text-left px-6 py-3 text-xs font-medium text-gray-500 uppercase">Товар</th>
@@ -329,9 +335,9 @@ export default function Products() {
 
         {/* Add/Edit Modal */}
         {showAddModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-              <div className="flex justify-between items-center mb-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg bg-white p-5 shadow-xl sm:p-6">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h2 className="text-xl font-bold">
                   {editingProduct ? 'Редактировать товар' : 'Добавить товар'}
                 </h2>
@@ -360,7 +366,7 @@ export default function Products() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Артикул (SKU)
@@ -385,7 +391,7 @@ export default function Products() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Цена *
@@ -499,18 +505,18 @@ export default function Products() {
                   </label>
                 </div>
 
-                <div className="flex gap-3 justify-end">
+                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     onClick={() => {
                       setShowAddModal(false);
                       resetForm();
                     }}
-                    className="btn-secondary"
+                    className="btn-secondary w-full sm:w-auto"
                   >
                     Отмена
                   </button>
-                  <button type="submit" className="btn-primary">
+                  <button type="submit" className="btn-primary w-full sm:w-auto">
                     {editingProduct ? 'Сохранить' : 'Добавить'}
                   </button>
                 </div>
