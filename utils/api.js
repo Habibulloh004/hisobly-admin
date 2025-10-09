@@ -3,21 +3,38 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import toast from 'react-hot-toast';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE || 'https://hisoblyback.uz:9090';
+const FALLBACK_BASE_URL =
+  process.env.NODE_ENV === 'development'
+    ? 'https://hisoblyback.uz:9090'
+    : 'https://hisoblyback.uz:9090';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE || FALLBACK_BASE_URL;
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json'
-  }
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  },
+  withCredentials: false,
 });
 
+// ===== Helpers =====
+const isUUID = (v) =>
+  /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(String(v || '').trim());
+
+const openUrl = (url) => {
+  if (typeof window !== 'undefined' && url) window.location.href = url;
+};
+
+// ===== Interceptors =====
 api.interceptors.request.use(
   (config) => {
     const token = Cookies.get('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+    // optional: trace id for idempotency on billing/payment
+    if (!config.headers['X-Idempotency-Key']) {
+      config.headers['X-Idempotency-Key'] = crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
     }
     return config;
   },
@@ -26,40 +43,38 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const suppress = error?.config?.suppressToast;
-    const status = error.response?.status;
-    
+    const status = error?.response?.status;
+
     if (status === 401) {
       Cookies.remove('token');
       if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }
     }
-    
+
     if (!suppress) {
-      if (status === 403) {
-        toast.error('У вас нет прав для выполнения этого действия');
-      } else if (status === 404) {
-        toast.error('Ресурс не найден');
-      } else if (error.response?.data?.message) {
-        toast.error(error.response.data.message);
-      } else if (error.response?.data?.errors) {
-        const errorMessages = Object.values(error.response.data.errors).flat();
-        errorMessages.forEach(msg => toast.error(msg));
-      } else {
-        toast.error('Произошла ошибка');
-      }
+      if (status === 403) toast.error('У вас нет прав для выполнения этого действия');
+      else if (status === 404) toast.error('Ресурс не найден');
+      else if (status === 409) toast.error('Конфликт запроса. Повторите попытку.');
+      else if (status === 429) toast.error('Слишком много запросов. Попробуйте позже.');
+      else if (error.response?.data?.message) toast.error(error.response.data.message);
+      else if (error.response?.data?.errors) {
+        Object.values(error.response.data.errors).flat().forEach((m) => toast.error(m));
+      } else toast.error('Произошла ошибка');
     }
     return Promise.reject(error);
   }
 );
 
+// ===== Auth =====
 export const authAPI = {
   login: (data) => api.post('/auth/login', data),
   register: (data) => api.post('/auth/register', data),
 };
 
+// ===== Tenant / Subscription-aware endpoints =====
 export const tenantAPI = {
   getMe: () => api.get('/tenants/me'),
   activate: () => api.post('/tenants/activate'),
@@ -67,6 +82,120 @@ export const tenantAPI = {
   getList: (params) => api.get('/tenants/list', { params }),
 };
 
+// ===== Billing (Subscription) =====
+// Expect these backend routes (common Stripe/Payme/Click patterns):
+// GET  /billing/plans                 -> available plans
+// GET  /billing/status                -> current subscription status
+// POST /billing/checkout             -> {plan_id, success_url, cancel_url} -> {url}
+// POST /billing/portal               -> {return_url} -> {url}
+// POST /billing/cancel               -> cancel at period end
+// POST /billing/resume               -> resume subscription
+export const billingAPI = {
+  /** Получить все доступные тарифные планы */
+  getPlans: () => api.get('/billing/plans'),
+
+  /** Текущий статус подписки (план, дата окончания, активность) */
+  getStatus: () => api.get('/billing/status'),
+
+  /** Создать checkout-сессию (например, Stripe / Click / Payme / Uzumbank) */
+  createCheckout: (payload) => {
+    // payload: { plan_id, company_name, warehouse_id, success_url, cancel_url }
+    return api.post('/billing/checkout', payload);
+  },
+
+  /** Открыть клиентский портал для продления / отмены подписки */
+  openPortal: (payload) => {
+    // payload: { return_url }
+    return api.post('/billing/portal', payload);
+  },
+
+  /** Отменить подписку по окончании оплаченного периода */
+  cancelAtPeriodEnd: () => api.post('/billing/cancel'),
+
+  /** Возобновить отменённую подписку */
+  resume: () => api.post('/billing/resume'),
+};
+
+// ===== Payment (direct pay + confirm flow with OTP) =====
+export const paymentAPI = {
+  /** Step 1: Инициация оплаты */
+  pay: async (data) => {
+    // auto-generate unique extraId and transactionData for traceability
+    const uniqueSuffix = Date.now().toString().slice(-6);
+    const payload = {
+      cardNumber: data.cardNumber,
+      amount: Number(data.amount),
+      expireDate: data.expireDate,
+      extraId: data.extraId || `ORDER-${uniqueSuffix}`,
+      transactionData: data.transactionData || `POS-HISOBLY-${uniqueSuffix}`,
+    };
+
+    const res = await api.post('/payment/pay', payload);
+    return res.data; // expected: { result: { otpSentPhone, session, transactionId } }
+  },
+
+  /** Step 2: Подтверждение оплаты по OTP */
+  confirm: async (data) => {
+    // payload: { session, otp }
+    const res = await api.post('/payment/confirm', data);
+    return res.data; // expected: { result: { amount, statusComment, transactionData, ... } }
+  },
+};
+
+
+// ===== Payments (one-off/intents, gateway verify, settings) =====
+// Optional backend routes if you support POS one-offs or verifying credentials:
+// POST /payments/verify {gateway, credentials}
+// POST /payments/intent {amount, currency, method, meta}
+export const paymentsAPI = {
+  // store/load payment settings (falls back to localStorage if 404)
+  getSettings: async () => {
+    try {
+      const { data } = await api.get('/settings/payments', { suppressToast: true });
+      return { data };
+    } catch (e) {
+      // fallback to local storage
+      const settings = localStorage.getItem('settings_payments');
+      return {
+        data: settings
+          ? JSON.parse(settings)
+          : {
+              enabled_methods: {
+                cash: true,
+                card: true,
+                Click: false,
+                Payme: false,
+                Uzumbank: false,
+                Bonus: false,
+                Certificate: false,
+                Others: true,
+              },
+              default_method: 'cash',
+              gateways: {
+                Click: { merchant_id: '', service_id: '', secret_key: '' },
+                Payme: { merchant_id: '', test_mode: false },
+                Uzumbank: { merchant_id: '', terminal_id: '', secret_key: '' },
+              },
+              receipt_settings: { show_payment_details: true, show_change: true, split_payments: true },
+            },
+      };
+    }
+  },
+  saveSettings: async (settings) => {
+    try {
+      const { data } = await api.put('/settings/payments', settings, { suppressToast: true });
+      return { data };
+    } catch (e) {
+      localStorage.setItem('settings_payments', JSON.stringify(settings));
+      return { data: settings };
+    }
+  },
+  verifyGateway: (gateway, credentials) => api.post('/payments/verify', { gateway, credentials }),
+  createIntent: ({ amount, currency = 'UZS', method, meta }) =>
+    api.post('/payments/intent', { amount: Number(amount) || 0, currency, method, meta }),
+};
+
+// ===== Stores / Warehouses / Products / Discounts / Sales / Returns / Cash Shifts / Inventory / Sync =====
 export const storeAPI = {
   list: () => api.get('/stores'),
   create: (data) => api.post('/stores', data),
@@ -87,22 +216,20 @@ export const productAPI = {
   list: () => api.get('/products'),
   create: (data) => {
     const payload = { name: data.name, price: parseFloat(data.price) || 0 };
-    if (data.sku && data.sku.trim()) payload.sku = data.sku.trim();
-    if (data.barcode && data.barcode.trim()) payload.barcode = data.barcode.trim();
+    if (data.sku?.trim()) payload.sku = data.sku.trim();
+    if (data.barcode?.trim()) payload.barcode = data.barcode.trim();
     if (data.cost !== undefined && data.cost !== '') payload.cost = parseFloat(data.cost) || 0;
-    if (data.category_id && /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(String(data.category_id).trim())) {
-      payload.category_id = String(data.category_id).trim();
-    }
-    if (data.tax_id && data.tax_id.trim()) payload.tax_id = data.tax_id.trim();
+    if (data.category_id && isUUID(data.category_id)) payload.category_id = String(data.category_id).trim();
+    if (data.tax_id?.trim()) payload.tax_id = data.tax_id.trim();
     if (data.is_active !== undefined) payload.is_active = Boolean(data.is_active);
     if (data.unit && data.unit !== 'pcs') {
       const unit = String(data.unit).trim();
-      const allowed = new Set(['pcs','kg','g','l','ml','m','m2','m3','box','pack']);
+      const allowed = new Set(['pcs', 'kg', 'g', 'l', 'ml', 'm', 'm2', 'm3', 'box', 'pack']);
       if (allowed.has(unit)) payload.unit = unit;
     }
-    if (data.unit_code && data.unit_code.trim()) payload.unit_code = data.unit_code.trim();
-    if (data.ikpu_code && data.ikpu_code.trim()) payload.ikpu_code = data.ikpu_code.trim();
-    if (data.comment && data.comment.trim()) payload.comment = data.comment.trim();
+    if (data.unit_code?.trim()) payload.unit_code = data.unit_code.trim();
+    if (data.ikpu_code?.trim()) payload.ikpu_code = data.ikpu_code.trim();
+    if (data.comment?.trim()) payload.comment = data.comment.trim();
     return api.post('/products', payload);
   },
   get: (id) => api.get(`/products/${id}`),
@@ -110,23 +237,23 @@ export const productAPI = {
     const payload = {};
     if (data.name !== undefined) payload.name = data.name;
     if (data.price !== undefined) payload.price = parseFloat(data.price) || 0;
-    if (data.sku !== undefined) payload.sku = data.sku.trim() || null;
-    if (data.barcode !== undefined) payload.barcode = data.barcode.trim() || null;
+    if (data.sku !== undefined) payload.sku = data.sku?.trim() || null;
+    if (data.barcode !== undefined) payload.barcode = data.barcode?.trim() || null;
     if (data.cost !== undefined) payload.cost = parseFloat(data.cost) || 0;
     if (data.category_id !== undefined) {
-      const cid = String(data.category_id).trim();
-      payload.category_id = cid ? (/^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(cid) ? cid : null) : null;
+      const cid = String(data.category_id || '').trim();
+      payload.category_id = cid ? (isUUID(cid) ? cid : null) : null;
     }
-    if (data.tax_id !== undefined) payload.tax_id = data.tax_id.trim() || null;
+    if (data.tax_id !== undefined) payload.tax_id = data.tax_id?.trim() || null;
     if (data.is_active !== undefined) payload.is_active = Boolean(data.is_active);
     if (data.unit !== undefined) {
       const unit = String(data.unit || '').trim();
-      const allowed = new Set(['pcs','kg','g','l','ml','m','m2','m3','box','pack']);
+      const allowed = new Set(['pcs', 'kg', 'g', 'l', 'ml', 'm', 'm2', 'm3', 'box', 'pack']);
       payload.unit = allowed.has(unit) ? unit : 'pcs';
     }
-    if (data.unit_code !== undefined) payload.unit_code = data.unit_code.trim() || null;
-    if (data.ikpu_code !== undefined) payload.ikpu_code = data.ikpu_code.trim() || null;
-    if (data.comment !== undefined) payload.comment = data.comment.trim() || null;
+    if (data.unit_code !== undefined) payload.unit_code = data.unit_code?.trim() || null;
+    if (data.ikpu_code !== undefined) payload.ikpu_code = data.ikpu_code?.trim() || null;
+    if (data.comment !== undefined) payload.comment = data.comment?.trim() || null;
     return api.patch(`/products/${id}`, payload);
   },
   delete: (id) => api.delete(`/products/${id}`),
@@ -170,18 +297,20 @@ export const salesAPI = {
       store_id: data.store_id,
       warehouse_id: data.warehouse_id || null,
       discount_id: data.discount_id || null,
-      items: data.items.map(item => ({
+      items: data.items.map((item) => ({
         product_id: item.product_id,
         qty: parseFloat(item.qty) || 0,
         price: parseFloat(item.price) || 0,
         discount: parseFloat(item.discount) || 0,
-        tax_rate: parseFloat(item.tax_rate) || 0
+        tax_rate: parseFloat(item.tax_rate) || 0,
       })),
-      payments: data.payments ? data.payments.map(payment => ({
-        type: payment.type,
-        amount: parseFloat(payment.amount) || 0
-      })) : [],
-      note: data.note || null
+      payments: data.payments
+        ? data.payments.map((payment) => ({
+            type: payment.type,
+            amount: parseFloat(payment.amount) || 0,
+          }))
+        : [],
+      note: data.note || null,
     };
     return api.post('/sales', payload);
   },
@@ -196,7 +325,7 @@ export const returnsAPI = {
       product_id: data.product_id,
       qty: parseFloat(data.qty) || 0,
       reason: data.reason || null,
-      amount: data.amount ? parseFloat(data.amount) : null
+      amount: data.amount ? parseFloat(data.amount) : null,
     };
     return api.post('/returns', payload);
   },
@@ -223,6 +352,7 @@ export const syncAPI = {
   push: (data) => api.post('/sync/push', data),
 };
 
+// ===== Mocked endpoints kept for now (can be wired later) =====
 export const employeeAPI = {
   list: (params) => Promise.resolve({ data: [] }),
   create: (data) => Promise.resolve({ data: { id: Date.now().toString(), ...data } }),
@@ -233,26 +363,28 @@ export const employeeAPI = {
 };
 
 export const roleAPI = {
-  list: () => Promise.resolve({ 
-    data: [
-      { id: '1', name: 'owner', description: 'Владелец - полный доступ' },
-      { id: '2', name: 'manager', description: 'Менеджер - управление продажами' },
-      { id: '3', name: 'cashier', description: 'Кассир - проведение продаж' },
-      { id: '4', name: 'accountant', description: 'Бухгалтер - финансовые отчеты' },
-    ]
-  }),
+  list: () =>
+    Promise.resolve({
+      data: [
+        { id: '1', name: 'owner', description: 'Владелец - полный доступ' },
+        { id: '2', name: 'manager', description: 'Менеджер - управление продажами' },
+        { id: '3', name: 'cashier', description: 'Кассир - проведение продаж' },
+        { id: '4', name: 'accountant', description: 'Бухгалтер - финансовые отчеты' },
+      ],
+    }),
 };
 
 export const categoryAPI = {
-  list: () => Promise.resolve({ 
-    data: [
-      { id: '1', name: 'Электроника' },
-      { id: '2', name: 'Одежда' },
-      { id: '3', name: 'Продукты' },
-      { id: '4', name: 'Бытовая техника' },
-      { id: '5', name: 'Другое' }
-    ]
-  }),
+  list: () =>
+    Promise.resolve({
+      data: [
+        { id: '1', name: 'Электроника' },
+        { id: '2', name: 'Одежда' },
+        { id: '3', name: 'Продукты' },
+        { id: '4', name: 'Бытовая техника' },
+        { id: '5', name: 'Другое' },
+      ],
+    }),
   create: (data) => Promise.resolve({ data: { id: Date.now().toString(), ...data } }),
   get: (id) => Promise.resolve({ data: { id, name: 'Категория' } }),
   update: (id, data) => Promise.resolve({ data: { id, ...data } }),
@@ -262,61 +394,27 @@ export const categoryAPI = {
 export const settingsAPI = {
   getGeneral: () => {
     const settings = localStorage.getItem('app_settings');
-    return Promise.resolve({ 
-      data: settings ? JSON.parse(settings) : {
-        company_name: 'Hisobly',
-        inn: '',
-        address: '',
-        phone: '',
-        language: 'ru',
-        currency: 'UZS',
-        timezone: 'UTC+5',
-        date_format: 'DD/MM/YYYY',
-        backup_enabled: true,
-        backup_frequency: 'daily'
-      }
+    return Promise.resolve({
+      data: settings
+        ? JSON.parse(settings)
+        : {
+            company_name: 'Hisobly',
+            inn: '',
+            address: '',
+            phone: '',
+            language: 'ru',
+            currency: 'UZS',
+            timezone: 'UTC+5',
+            date_format: 'DD/MM/YYYY',
+            backup_enabled: true,
+            backup_frequency: 'daily',
+          },
     });
   },
   updateGeneral: (data) => {
     localStorage.setItem('app_settings', JSON.stringify(data));
     return Promise.resolve({ data });
   },
-  getPayments: () => {
-    const settings = localStorage.getItem('settings_payments');
-    return Promise.resolve({
-      data: settings ? JSON.parse(settings) : {
-        enabled_methods: {
-          cash: true,
-          card: true,
-          Click: false,
-          Payme: false,
-          Uzumbank: false,
-          Bonus: false,
-          Certificate: false,
-          Others: true
-        },
-        default_method: 'cash',
-        gateways: {
-          Click: { merchant_id: '', service_id: '', secret_key: '' },
-          Payme: { merchant_id: '', test_mode: false },
-          Uzumbank: { merchant_id: '', terminal_id: '', secret_key: '' }
-        },
-        receipt_settings: {
-          show_payment_details: true,
-          show_change: true,
-          split_payments: true
-        }
-      }
-    });
-  },
-  updatePayments: (data) => {
-    localStorage.setItem('settings_payments', JSON.stringify(data));
-    return Promise.resolve({ data });
-  },
-  getEquipment: () => Promise.resolve({ data: [] }),
-  addEquipment: (data) => Promise.resolve({ data: { id: Date.now().toString(), ...data } }),
-  updateEquipment: (id, data) => Promise.resolve({ data: { id, ...data } }),
-  deleteEquipment: (id) => Promise.resolve({ data: true })
 };
 
 export const analyticsAPI = { getDashboard: () => Promise.resolve({ data: {} }) };
@@ -329,12 +427,14 @@ export const notificationAPI = { list: () => Promise.resolve({ data: [] }), getU
 export const fileAPI = { upload: () => Promise.resolve({ data: {} }), delete: () => Promise.resolve({ data: true }) };
 export const integrationAPI = { list: () => Promise.resolve({ data: [] }) };
 
-// Payment Helper Functions
+// ===== UI helpers for payments tab =====
 export const getEnabledPaymentMethods = () => {
   const settings = localStorage.getItem('settings_payments');
   if (!settings) return ['cash', 'card', 'Others'];
   const parsed = JSON.parse(settings);
-  return Object.entries(parsed.enabled_methods).filter(([_, enabled]) => enabled).map(([method]) => method);
+  return Object.entries(parsed.enabled_methods)
+    .filter(([, enabled]) => enabled)
+    .map(([method]) => method);
 };
 
 export const getDefaultPaymentMethod = () => {
@@ -360,9 +460,14 @@ export const isSplitPaymentsAllowed = () => {
 
 export const getReceiptSettings = () => {
   const settings = localStorage.getItem('settings_payments');
-  if (!settings) return { show_payment_details: true, show_change: true, split_payments: true };
+  if (!settings)
+    return { show_payment_details: true, show_change: true, split_payments: true };
   const parsed = JSON.parse(settings);
-  return parsed.receipt_settings || { show_payment_details: true, show_change: true, split_payments: true };
+  return parsed.receipt_settings || {
+    show_payment_details: true,
+    show_change: true,
+    split_payments: true,
+  };
 };
 
 export default api;
