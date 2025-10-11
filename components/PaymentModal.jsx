@@ -18,7 +18,7 @@ import {
 const initialForm = {
   cardNumber: "",
   expireDate: "",
-  amount: "",
+  amount: "100000",
   cardHolder: "",
 };
 
@@ -231,6 +231,7 @@ export default function PaymentModal({ onClose, onSuccess }) {
                     type="text"
                     inputMode="numeric"
                     value={formattedAmount}
+                    disabled
                     onChange={(e) => handleAmountChange(e.target.value)}
                     className="w-full rounded-lg border border-gray-200 bg-gray-50 py-2 px-3 font-medium focus:border-[#475B8D] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#475B8D]/20"
                     placeholder="100 000"
