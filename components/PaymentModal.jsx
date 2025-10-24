@@ -18,7 +18,7 @@ import {
 const initialForm = {
   cardNumber: "",
   expireDate: "",
-  amount: "100000",
+  amount: "50000",
   cardHolder: "",
 };
 
