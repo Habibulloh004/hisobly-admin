@@ -40,7 +40,7 @@ export default function PaymentModal({ onClose, onSuccess }) {
     const hasDots = normalizeCardNumber(paymentForm.cardNumber).length === 16;
     const expiryOk = isExpiryInFuture(expiryDigits);
     const amountValue = Number(normalizeAmount(paymentForm.amount));
-    const amountOk = amountValue >= 100000;
+    const amountOk = amountValue >= 50000;
     return hasDots && expiryOk && amountOk;
   }, [paymentForm, expiryDigits]);
 
@@ -90,7 +90,7 @@ export default function PaymentModal({ onClose, onSuccess }) {
       toast.error("Срок действия карты некорректен");
       return;
     }
-    if (Number(amount) < 100000) {
+    if (Number(amount) < 50000) {
       toast.error("Минимальная сумма оплаты 100 000 сум");
       return;
     }
